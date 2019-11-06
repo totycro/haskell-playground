@@ -12,3 +12,5 @@ build-binary: build-image
 run:
 	${RUN_IN_DOCKER} --publish 8000:8000 haskell stack run
 
+watch-run:
+	${RUN_IN_DOCKER} haskell bash -c "inotifywait --monitor -e close_write Main.hs | while read event; do time stack run ; done;"

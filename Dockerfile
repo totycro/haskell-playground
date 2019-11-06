@@ -9,6 +9,15 @@
 
 FROM fpco/stack-build:lts-14.13
 
-ENV HOME /mnt
+# TODO:
+# possibly switch to somethink like this (unmaintained):
+# https://github.com/mrkkrp/haskell-docker/blob/master/ghc-8.4.4/Dockerfile
+
+# (official haskel docker images don't provide a Dockerfile and it's git links don't work)
+
+
+RUN apt-get update && apt-get --yes install inotify-tools
+
+ENV HOME /mnt/docker-home
 
 WORKDIR /mnt
