@@ -39,4 +39,10 @@ main = do
                     )
             maybe (S.status status404 >> S.text "not found") S.json item
 
-        S.post "/word" undefined
+        S.post "/word" $ do
+            word <- S.jsonData :: S.ActionM MyWord
+            -- TODO: 400 on invalid data, not 500
+            liftIO
+                $   const ()
+                <$> execute conn "INSERT INTO words(text) VALUES(?);" word
+            S.status status201
