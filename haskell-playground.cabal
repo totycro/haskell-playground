@@ -4,10 +4,11 @@ cabal-version: >= 1.8
 build-type:    Simple
 
 executable          haskell-playground
-    hs-source-dirs: .
+    hs-source-dirs: src
     main-is:        Main.hs
     ghc-options:    -Wall -threaded -O2 -rtsopts -with-rtsopts=-N
     extensions:     OverloadedStrings
+    other-modules: Types, InitDB
     build-depends:  base   >= 4      && < 5
                   , scotty
                   , postgresql-simple
