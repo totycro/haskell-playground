@@ -1,8 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import qualified Web.Scotty                    as S
-import           Database.PostgreSQL.Simple
 import           Control.Monad.IO.Class         ( liftIO )
+import           Network.HTTP.Types.Status
+import           Data.Maybe
+
+import qualified Web.Scotty                    as S
+
+import           Database.PostgreSQL.Simple
 
 import           InitDB                         ( initDb )
 import           Types
@@ -10,6 +14,7 @@ import           Types
 
 -- TODO: tests with hspec wai
 
+-- TODO: errors
 main :: IO ()
 main = do
     conn <- connect defaultConnectInfo { connectDatabase = "postgres"
@@ -18,8 +23,20 @@ main = do
                                        }
     initDb conn
     S.scotty 8000 $ do
-        S.get "/words" $ do
-            items <- liftIO ( query_ conn "SELECT * FROM words;" :: IO [MyWord])
+        S.get "/word" $ do
+            items <- liftIO
+                (query_ conn "SELECT text FROM words;" :: IO [MyWord])
             S.json items
 
-        S.post "/words" undefined
+        S.get "/word/:id" $ do
+            wordId <- S.param "id"
+            item   <-
+                liftIO
+                $   listToMaybe
+                <$> (query conn
+                           "SELECT text FROM words where id = ?;"
+                           [wordId :: Integer] :: IO [MyWord]
+                    )
+            maybe (S.status status404 >> S.text "not found") S.json item
+
+        S.post "/word" undefined

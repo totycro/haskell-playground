@@ -22,7 +22,7 @@ initDb conn = test `catch` createStuff
     createStuff :: SqlError -> IO ()
     createStuff _ = do
         putStrLn "Creating table"
-        _ <- execute_ conn "create table words (word text);"
-        _ <- execute_ conn "insert into words values('narudo');"
-        _ <- execute_ conn "insert into words values('epur');"
+        _ <- execute_ conn "create table words (id SERIAL, text TEXT NOT NULL);"
+        _ <- execute_ conn "insert into words(text) values('narudo');"
+        _ <- execute_ conn "insert into words(text) values('epur');"
         return ()

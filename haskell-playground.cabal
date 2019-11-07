@@ -14,3 +14,4 @@ executable          haskell-playground
                   , postgresql-simple
                   , aeson
                   , mtl
+                  , http-types
