@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import           Database.PostgreSQL.Simple
-import           Database.PostgreSQL.Simple.FromRow
 
 import           InitDB                         ( initDb )
 import           Types                          ( MyWord(MyWord) )

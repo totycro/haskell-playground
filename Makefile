@@ -14,5 +14,5 @@ build-binary: build-image
 run:
 	${RUN_IN_DOCKER} --publish 8000:8000 haskell stack run
 
-watch-run:
-	${RUN_IN_DOCKER} haskell bash -c "inotifywait --monitor -e close_write -r src | while read event; do time stack run ; done;"
+watch-build:
+	${RUN_IN_DOCKER} haskell bash -c "inotifywait --monitor -e close_write -r src | while read event; do time stack build ; done;"
