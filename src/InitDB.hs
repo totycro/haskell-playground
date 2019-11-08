@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module InitDB where
 
 import           Database.PostgreSQL.Simple     ( Connection

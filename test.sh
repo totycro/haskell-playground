@@ -1,9 +1,7 @@
 #!/usr/bin/bash -e
 
 function run () {
-    echo "========================================"
-    echo "= $2 ($1)"
-    echo "========================================"
+    echo "==== $2 ($1) ===="
     http "localhost:8000$1" $3
 }
 
@@ -28,3 +26,4 @@ run "/word/2" "detail"
 run "/word/2333" "detail does not exist"
 run "/word" "create" text=test_$(date --iso-8601=seconds)
 run "/word" "create missing data" other_key=other_value
+

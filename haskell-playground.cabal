@@ -4,14 +4,36 @@ cabal-version: >= 1.8
 build-type:    Simple
 
 executable          haskell-playground
-    hs-source-dirs: src
-    main-is:        MainCRUD.hs
-    ghc-options:    -Wall -threaded -O2 -rtsopts -with-rtsopts=-N
-    extensions:     OverloadedStrings
-    other-modules: Types, InitDB
-    build-depends:  base   >= 4      && < 5
+  hs-source-dirs: src
+  main-is:        MainCRUD.hs
+  ghc-options:    -Wall -threaded -O2 -rtsopts -with-rtsopts=-N
+  extensions:     OverloadedStrings
+  other-modules: Types, InitDB, WebApp
+  build-depends:  base   >= 4      && < 5
                   , scotty
                   , postgresql-simple
                   , aeson
                   , mtl
                   , http-types
+                  , wai
+                  , wai-extra
+                  , warp
+
+test-suite main-test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: src
+  main-is: Test.hs
+  other-modules: Types, InitDB, WebApp
+  build-depends:  base   >= 4      && < 5
+                  , scotty
+                  , postgresql-simple
+                  , aeson
+                  , mtl
+                  , http-types
+                  , wai
+                  , hspec
+                  , hspec-wai
+                  , hspec-wai-json
+                  , wai
+                  , wai-extra
+                  , warp
