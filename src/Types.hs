@@ -9,18 +9,22 @@ import           Database.PostgreSQL.Simple.ToRow
 import           Database.PostgreSQL.Simple.ToField
 
 import           Data.Aeson
-import           Data.Aeson.Types
 
 
-newtype MyWord = MyWord {
+
+data MyWord = MyWord {
+  pk :: Int,
   text :: String
 } deriving (Show, Generic)
 
 instance FromRow MyWord where
-    fromRow = MyWord <$> field
+    fromRow = MyWord <$> field <*> field
 
 instance ToRow MyWord where
-    toRow word = [toField $ text word]
+    toRow word = [toField $ pk word, toField $ text (word :: MyWord)]
 
 instance ToJSON MyWord
 instance FromJSON MyWord
+
+instance Eq MyWord where
+    a == b = (pk a == pk b) && (text (a :: MyWord) == text (b :: MyWord))

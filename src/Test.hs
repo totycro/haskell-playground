@@ -7,47 +7,68 @@ module Main where
 import           Test.Hspec
 import           Test.Hspec.Wai
 import           Test.Hspec.Wai.JSON
-import           Network.Wai.Test
+import qualified Network.Wai.Test              as WT
 import           Network.HTTP.Types
-import           Database.PostgreSQL.Simple     ( SqlError )
+import           Database.PostgreSQL.Simple    as PG
+import qualified Data.Aeson                    as A
 
 import           WebApp                         ( webApp
                                                 , dbConnection
                                                 )
+import           Types                          ( MyWord(..) )
 
 import           InitDB
-import           Debug.Trace
 import           Control.Exception              ( catch )
 
+import           Data.ByteString.UTF8          as BSU
+
+import           Debug.Trace
+
 main :: IO ()
-main = hspec $ before_ recreateDb $ do
-    spec
-
-
-recreateDb :: IO ()
-recreateDb = do
+main = do
     conn <- dbConnection
+    hspec $ before_ (recreateDb conn) $ spec conn
+
+
+recreateDb :: PG.Connection -> IO ()
+recreateDb conn = do
     deleteContent conn `catch` (\(e :: SqlError) -> createTable conn)
     insertData conn
 
-spec :: Spec
-spec = with webApp $ do
-    -- TODO; cleanup db between runs
+
+someWord :: Connection -> IO MyWord
+someWord conn =
+    head
+        <$> (PG.query_ conn "SELECT id, text FROM words LIMIT 1" :: IO [MyWord])
+
+matchMaybe :: (a -> Bool) -> Maybe a -> Bool
+matchMaybe = maybe False
+
+spec :: PG.Connection -> Spec
+spec conn = with webApp $ do
     describe "Retrieval" $ do
-        it "list provides list" $ do
-            get "/word"
-                `shouldRespondWith` [json|[{text: "narudo"},{text: "epur"}]|]
-
         it "get provides detail" $ do
-            get "/word/1" `shouldRespondWith` [json|{text: "narudo"}|]
+            word     <- liftIO $ someWord conn
+            response <- get (BSU.fromString ("/word/" ++ show (pk word)))
+            liftIO
+                $          (A.decode (WT.simpleBody response) :: Maybe MyWord)
+                `shouldBe` Just word
 
-        it "get results in 404 if word doesn't exist" $ do
-            get "/word/12345" `shouldRespondWith` 404
-        --it "word list responds arbit" $ do foo <- get "/word" liftIO $ (simpleBody foo) `shouldBe` "a" trace (show foo) 3
+        it "list provides list" $ do
+            response <- get "/word"
+            liftIO
+                $ (A.decode (WT.simpleBody response) :: Maybe [MyWord])
+                `shouldSatisfy` matchMaybe (\l -> Prelude.length l > 2)
+
+        it "get results in 404 if word doesn't exist"
+            $                   get "/word/12345"
+            `shouldRespondWith` 404
 
     describe "Creation" $ do
-        it "allows to add a new word" $ do
-            post "/word" [json|{text: "newWord"}|] `shouldRespondWith` 201
+        it "allows to add a new word"
+            $                   post "/word" [json|{text: "newWord"}|]
+            `shouldRespondWith` 201
 
-        it "fails with bad request if text is not provided" $ do
-            post "/word" [json|{}|] `shouldRespondWith` 400
+        it "fails with bad request if text is not provided"
+            $                   post "/word" [json|{}|]
+            `shouldRespondWith` 400

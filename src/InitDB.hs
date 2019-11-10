@@ -18,8 +18,7 @@ initDb conn = test `catch` createStuff
   where
 
     test :: IO ()
-    test = (query_ conn "select 1 from words;" :: IO [Only Int])
-        >> putStrLn "NOT creating table"
+    test = void (query_ conn "select 1 from words;" :: IO [Only Int])
 
     createStuff :: SqlError -> IO ()
     createStuff _ = do
