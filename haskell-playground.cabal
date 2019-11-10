@@ -8,7 +8,7 @@ library
   ghc-options:    -Wall -O0
   extensions:     OverloadedStrings
   exposed-modules: WebApp
-  other-modules: Types, InitDB, HelperTypes
+  other-modules: Types, InitDB
   build-depends:  base   >= 4      && < 5
                   , scotty
                   , postgresql-simple
@@ -18,6 +18,7 @@ library
                   , wai
                   , wai-extra
                   , warp
+                  , bytestring
 
 executable service
   hs-source-dirs: .
@@ -29,7 +30,7 @@ test-suite test
   type: exitcode-stdio-1.0
   hs-source-dirs: src
   main-is: Test.hs
-  other-modules: Types, InitDB, HelperTypes, WebApp
+  other-modules: Types, InitDB, WebApp
   build-depends:  base   >= 4      && < 5
                   , scotty
                   , postgresql-simple
@@ -44,3 +45,4 @@ test-suite test
                   , wai-extra
                   , warp
                   , utf8-string
+                  , bytestring

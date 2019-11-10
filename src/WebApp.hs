@@ -3,9 +3,11 @@
 module WebApp where
 
 import           Control.Monad.IO.Class         ( liftIO )
-import           Control.Exception              ( catch )
 import           Network.HTTP.Types.Status
 import           Data.Maybe
+import qualified Data.Aeson                    as A
+import qualified Data.Aeson.Types              as AT
+import qualified Data.ByteString.Lazy          as BSL
 
 -- TODO; not have this here?
 import           Network.Wai.Handler.Warp
@@ -17,7 +19,6 @@ import           Database.PostgreSQL.Simple
 
 import           InitDB                         ( initDb )
 import qualified Types
-import qualified HelperTypes
 
 import           Debug.Trace
 
@@ -39,7 +40,7 @@ webApp = do
     S.scottyApp $ do
         S.defaultHandler
             (\e -> do
-                trace (show e) (liftIO $ print "error handler reached")
+                trace (show e) (liftIO $ putStrLn "error handler reached")
                 S.text e
             )
         S.get "/word" $ do
@@ -59,19 +60,19 @@ webApp = do
             maybe (S.status status404 >> S.text "not found") S.json item
 
         S.post "/word" $ do
-            liftIO $ print "here"
-            -- (possibly deal with Scotty error here and transform this string error from aeson to a bad request error )
-            -- (tests!!)
-            --word <- ((Left (S.jsonData :: S.ActionM MyWord)) `catch` (\a -> Right a)) :: Either Int Int
-            wordText <- (S.jsonData :: S.ActionM HelperTypes.TextOnly)
+            body <- S.body
+            case parseWordText body of
+                Just text -> do
+                    liftIO $ () <$ execute
+                        conn
+                        "INSERT INTO words(text) VALUES(?);"
+                        [text]
+                    S.status status201
+                Nothing -> S.status status400
 
-            liftIO $ print "there"
-            -- TODO: 400 on invalid data, not 500
-            liftIO $ () <$ execute conn
-                                   "INSERT INTO words(text) VALUES(?);"
-                                   [HelperTypes.text wordText]
 
-            S.status status201
+parseWordText :: BSL.ByteString -> Maybe String
+parseWordText s = A.decode s >>= AT.parseMaybe (A..: "text")
 
 
 develMain :: IO ()

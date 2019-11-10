@@ -72,3 +72,7 @@ spec conn = with webApp $ do
         it "fails with bad request if text is not provided"
             $                   post "/word" [json|{}|]
             `shouldRespondWith` 400
+
+        it "fails with bad request if text is wrong type"
+            $                   post "/word" [json|{text: 24}|]
+            `shouldRespondWith` 400
