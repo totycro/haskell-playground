@@ -5,6 +5,9 @@ RUN_IN_DOCKER = docker-compose run --user $$(id -u)
 bash:
 	${RUN_IN_DOCKER} haskell bash
 
+ghci:
+	${RUN_IN_DOCKER} haskell stack ghci
+
 build-image:
 	docker-compose build
 
