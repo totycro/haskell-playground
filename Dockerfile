@@ -15,9 +15,6 @@ FROM fpco/stack-build:lts-14.13
 
 # (official haskel docker images don't provide a Dockerfile and it's git links don't work)
 
-
-RUN apt-get update && apt-get --yes install inotify-tools
-
 ENV HOME /mnt/docker-home
 
 WORKDIR /mnt
