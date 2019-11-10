@@ -11,6 +11,7 @@ import           Database.PostgreSQL.Simple     ( Connection
 
 
 import           Control.Exception              ( catch )
+import           Control.Monad                  ( void )
 
 initDb :: Connection -> IO ()
 initDb conn = test `catch` createStuff
@@ -20,11 +21,26 @@ initDb conn = test `catch` createStuff
     test = (query_ conn "select 1 from words;" :: IO [Only Int])
         >> putStrLn "NOT creating table"
 
-
     createStuff :: SqlError -> IO ()
     createStuff _ = do
         putStrLn "Creating table"
-        _ <- execute_ conn "create table words (id SERIAL, text TEXT NOT NULL);"
-        _ <- execute_ conn "insert into words(text) values('narudo');"
-        _ <- execute_ conn "insert into words(text) values('epur');"
+        _ <- createTable conn
+        _ <- insertData conn
         return ()
+
+
+createTable :: Connection -> IO ()
+createTable conn =
+    void $ execute_ conn "CREATE TABLE words (id SERIAL, text TEXT NOT NULL);"
+
+deleteContent :: Connection -> IO ()
+deleteContent conn = void $ execute_ conn "DELETE FROM words;"
+
+insertData :: Connection -> IO ()
+insertData conn = sequence_ $ execute_ conn <$> queries
+  where
+    queries =
+        [ "INSERT INTO words(text) VALUES('narudo');"
+        , "INSERT INTO words(text) VALUES('epur');"
+        , "INSERT INTO words(text) VALUES('pisara');"
+        ]

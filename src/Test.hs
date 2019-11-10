@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
 
@@ -8,15 +9,26 @@ import           Test.Hspec.Wai
 import           Test.Hspec.Wai.JSON
 import           Network.Wai.Test
 import           Network.HTTP.Types
+import           Database.PostgreSQL.Simple     ( SqlError )
 
-import           WebApp                         ( webApp )
+import           WebApp                         ( webApp
+                                                , dbConnection
+                                                )
 
+import           InitDB
 import           Debug.Trace
+import           Control.Exception              ( catch )
 
 main :: IO ()
-main = hspec $ do
+main = hspec $ before_ recreateDb $ do
     spec
 
+
+recreateDb :: IO ()
+recreateDb = do
+    conn <- dbConnection
+    deleteContent conn `catch` (\(e :: SqlError) -> createTable conn)
+    insertData conn
 
 spec :: Spec
 spec = with webApp $ do

@@ -23,14 +23,15 @@ import           Debug.Trace
 import           Network.Wai                    ( Application )
 
 
--- TODO: tests with hspec wai
---
+dbConnection :: IO Connection
+dbConnection = connect defaultConnectInfo { connectDatabase = "postgres"
+                                          , connectHost     = "db"
+                                          , connectPassword = "1234"
+                                          }
+
 webApp :: IO Application
 webApp = do
-    conn <- connect defaultConnectInfo { connectDatabase = "postgres"
-                                       , connectHost     = "db"
-                                       , connectPassword = "1234"
-                                       }
+    conn <- dbConnection
     initDb conn
 
     S.scottyApp $ do
