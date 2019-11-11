@@ -94,6 +94,12 @@ spec conn = with webApp $ do
                 `shouldReturn` [Only 1]
                 )
 
+        it "doesn't allow duplicates" $ do
+            let jsonData = [json|{text: "newWord"}|]
+            _ <- post "/word" jsonData
+            post "/word" jsonData `shouldRespondWith` 400
+
+
         it "fails with bad request if text is not provided"
             $                   post "/word" [json|{}|]
             `shouldRespondWith` 400
@@ -101,3 +107,8 @@ spec conn = with webApp $ do
         it "fails with bad request if text is wrong type"
             $                   post "/word" [json|{text: 24}|]
             `shouldRespondWith` 400
+
+    --describe "Deletion" $ do
+        --it "returns 204 on success"       undefined
+        -- it "actually deletes elements"    undefined
+        -- it "errors if item doesn't exist" undefined

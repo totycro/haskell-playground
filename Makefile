@@ -27,4 +27,4 @@ tests:
 	${RUN_IN_DOCKER} haskell stack test
 
 tests-watch:
-	${RUN_IN_DOCKER} haskell stack test --file-watch -j4
+	${RUN_IN_DOCKER} haskell stack test --file-watch --fast -j4

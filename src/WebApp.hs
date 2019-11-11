@@ -2,6 +2,10 @@
 
 module WebApp where
 
+-- TODO: clean up all imports
+import           Control.Exception              ( catchJust
+                                                , throw
+                                                )
 import           Control.Monad.IO.Class         ( liftIO )
 import           Network.HTTP.Types.Status
 import           Data.Maybe
@@ -16,6 +20,8 @@ import           Network.Wai.Middleware.RequestLogger
 import qualified Web.Scotty                    as S
 
 import           Database.PostgreSQL.Simple
+import qualified Database.PostgreSQL.Simple.Errors
+                                               as PGE
 
 import           InitDB                         ( initDb )
 import qualified Types
@@ -57,8 +63,6 @@ wordCreateView conn body = maybe (return NotCreated) createItem
         () <$ execute conn "INSERT INTO words(text) VALUES(?);" [wordText]
         return Created
 
-
-
 webApp :: IO Application
 webApp = do
     conn <- dbConnection
@@ -79,10 +83,23 @@ webApp = do
             maybe (S.status status404 >> S.text "not found") S.json maybeWord
         S.post "/word" $ do
             body           <- S.body
-            creationResult <- liftIO $ wordCreateView conn body
+            creationResult <- liftIO $ catchJust PGE.constraintViolation
+                                                 (wordCreateView conn body)
+                                                 handleUniqueViolation
+            -- TODO: error message: unique violation or missing key
             S.status $ case creationResult of
                 NotCreated -> status400
                 Created    -> status201
+
+
+        -- TODO: update
+        -- TODO: business logic: advanced word properties like providing adjectives for words (tag cloud-like)
+        --
+handleUniqueViolation :: PGE.ConstraintViolation -> IO CreationResult
+handleUniqueViolation e = case e of
+    PGE.UniqueViolation _ -> return NotCreated
+    _                     -> throw e
+
 
 
 develMain :: IO ()
