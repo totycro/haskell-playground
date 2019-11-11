@@ -31,35 +31,30 @@ dbConnection = connect defaultConnectInfo { connectDatabase = "postgres"
                                           , connectPassword = "1234"
                                           }
 
-wordListView :: Connection -> S.ActionM ()
-wordListView conn = do
-    items <- liftIO
-        (query_ conn "SELECT id, text FROM words;" :: IO [Types.MyWord])
-    S.json items
+wordListView :: Connection -> IO [Types.MyWord]
+wordListView conn =
+    query_ conn "SELECT id, text FROM words;" :: IO [Types.MyWord]
 
 
-wordDetailView :: Connection -> S.ActionM ()
-wordDetailView conn = do
-    wordId <- S.param "id"
-    item   <-
-        liftIO
-        $ listToMaybe
+-- TODO: own type for wordId
+wordDetailView :: Connection -> Integer -> IO (Maybe Types.MyWord)
+wordDetailView conn wordId =
+    listToMaybe
         <$> (query conn
                    "SELECT id, text FROM words where id = ?;"
                    [wordId :: Integer] :: IO [Types.MyWord]
             )
-    maybe (S.status status404 >> S.text "not found") S.json item
 
-wordCreateView :: Connection -> S.ActionM ()
-wordCreateView conn = do
-    body <- S.body
-    case parseWordText body of
-        Just text -> do
-            liftIO $ () <$ execute conn
-                                   "INSERT INTO words(text) VALUES(?);"
-                                   [text]
-            S.status status201
-        Nothing -> S.status status400
+
+wordCreateView :: Connection -> BSL.ByteString -> Maybe (IO ())
+wordCreateView conn body = createItem <$> parseWordText body
+  where
+    parseWordText :: BSL.ByteString -> Maybe String
+    parseWordText s = A.decode s >>= AT.parseMaybe (A..: "text")
+
+    createItem :: String -> IO ()
+    createItem wordText =
+        () <$ execute conn "INSERT INTO words(text) VALUES(?);" [wordText]
 
 
 
@@ -74,12 +69,17 @@ webApp = do
                 trace (show e) (liftIO $ putStrLn "error handler reached")
                 S.text e
             )
-        S.get "/word" $ wordListView conn
-        S.get "/word/:id" $ wordDetailView conn
-        S.post "/word" $ wordCreateView conn
-
-parseWordText :: BSL.ByteString -> Maybe String
-parseWordText s = A.decode s >>= AT.parseMaybe (A..: "text")
+        S.get "/word" $ do
+            wordList <- liftIO $ wordListView conn
+            S.json wordList
+        S.get "/word/:id" $ do
+            wordId    <- S.param "id"
+            maybeWord <- liftIO $ wordDetailView conn wordId
+            maybe (S.status status404 >> S.text "not found") S.json maybeWord
+        S.post "/word" $ do
+            body <- S.body
+            S.status
+                (maybe status400 (const status201) (wordCreateView conn body))
 
 
 develMain :: IO ()
