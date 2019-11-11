@@ -36,13 +36,11 @@ wordListView conn =
     query_ conn "SELECT id, text FROM words;" :: IO [Types.MyWord]
 
 
--- TODO: own type for wordId
-wordDetailView :: Connection -> Integer -> IO (Maybe Types.MyWord)
+wordDetailView :: Connection -> Types.WordId -> IO (Maybe Types.MyWord)
 wordDetailView conn wordId =
     listToMaybe
-        <$> (query conn
-                   "SELECT id, text FROM words where id = ?;"
-                   [wordId :: Integer] :: IO [Types.MyWord]
+        <$> (query conn "SELECT id, text FROM words where id = ?;" [wordId] :: IO
+                  [Types.MyWord]
             )
 
 
@@ -73,7 +71,7 @@ webApp = do
             wordList <- liftIO $ wordListView conn
             S.json wordList
         S.get "/word/:id" $ do
-            wordId    <- S.param "id"
+            wordId    <- Types.WordId <$> S.param "id"
             maybeWord <- liftIO $ wordDetailView conn wordId
             maybe (S.status status404 >> S.text "not found") S.json maybeWord
         S.post "/word" $ do

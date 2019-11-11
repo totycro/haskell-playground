@@ -11,11 +11,14 @@ import qualified Network.Wai.Test              as WT
 import           Network.HTTP.Types
 import           Database.PostgreSQL.Simple    as PG
 import qualified Data.Aeson                    as A
+import           Data.Coerce                    ( coerce )
 
 import           WebApp                         ( webApp
                                                 , dbConnection
                                                 )
-import           Types                          ( MyWord(..) )
+import           Types                          ( MyWord(..)
+                                                , WordId(..)
+                                                )
 
 import           InitDB
 import           Control.Exception              ( catch )
@@ -41,15 +44,22 @@ someWord conn =
     head
         <$> (PG.query_ conn "SELECT id, text FROM words LIMIT 1" :: IO [MyWord])
 
+
+detailUrl :: MyWord -> BSU.ByteString
+detailUrl word =
+    BSU.fromString $ "/word/" ++ show (coerce $ pk word :: Integer)
+
+
 matchMaybe :: (a -> Bool) -> Maybe a -> Bool
 matchMaybe = maybe False
+
 
 spec :: PG.Connection -> Spec
 spec conn = with webApp $ do
     describe "Retrieval" $ do
         it "get provides detail" $ do
             word     <- liftIO $ someWord conn
-            response <- get (BSU.fromString ("/word/" ++ show (pk word)))
+            response <- get $ detailUrl word
             liftIO
                 $          (A.decode (WT.simpleBody response) :: Maybe MyWord)
                 `shouldBe` Just word
