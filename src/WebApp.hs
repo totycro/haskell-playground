@@ -2,20 +2,16 @@
 
 module WebApp where
 
--- TODO: clean up all imports
 import           Control.Exception              ( catchJust
                                                 , throw
                                                 )
 import           Control.Monad.IO.Class         ( liftIO )
 import           Network.HTTP.Types.Status
-import           Data.Maybe
+import qualified Data.Maybe                    as M
 import qualified Data.Aeson                    as A
 import qualified Data.Aeson.Types              as AT
 import qualified Data.ByteString.Lazy          as BSL
 
--- TODO; not have this here?
-import           Network.Wai.Handler.Warp
-import           Network.Wai.Middleware.RequestLogger
 
 import qualified Web.Scotty                    as S
 
@@ -44,7 +40,7 @@ wordListView conn =
 
 wordDetailView :: Connection -> Types.WordId -> IO (Maybe Types.MyWord)
 wordDetailView conn wordId =
-    listToMaybe
+    M.listToMaybe
         <$> (query conn "SELECT id, text FROM words where id = ?;" [wordId] :: IO
                   [Types.MyWord]
             )
@@ -99,8 +95,3 @@ handleUniqueViolation :: PGE.ConstraintViolation -> IO CreationResult
 handleUniqueViolation e = case e of
     PGE.UniqueViolation _ -> return NotCreated
     _                     -> throw e
-
-
-
-develMain :: IO ()
-develMain = webApp >>= (run 8000 . logStdoutDev)

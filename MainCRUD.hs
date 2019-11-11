@@ -1,4 +1,4 @@
-import           WebApp                         ( develMain )
+import           Entrypoint                     ( develMain )
 
 main :: IO ()
 main = develMain

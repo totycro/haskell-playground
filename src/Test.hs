@@ -99,7 +99,6 @@ spec conn = with webApp $ do
             _ <- post "/word" jsonData
             post "/word" jsonData `shouldRespondWith` 400
 
-
         it "fails with bad request if text is not provided"
             $                   post "/word" [json|{}|]
             `shouldRespondWith` 400
