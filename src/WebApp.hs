@@ -44,15 +44,18 @@ wordDetailView conn wordId =
             )
 
 
-wordCreateView :: Connection -> BSL.ByteString -> Maybe (IO ())
-wordCreateView conn body = createItem <$> parseWordText body
+data CreationResult = Created | NotCreated
+wordCreateView :: Connection -> BSL.ByteString -> IO CreationResult
+wordCreateView conn body = maybe (return NotCreated) createItem
+    $ parseWordText body
   where
     parseWordText :: BSL.ByteString -> Maybe String
     parseWordText s = A.decode s >>= AT.parseMaybe (A..: "text")
 
-    createItem :: String -> IO ()
-    createItem wordText =
+    createItem :: String -> IO CreationResult
+    createItem wordText = do
         () <$ execute conn "INSERT INTO words(text) VALUES(?);" [wordText]
+        return Created
 
 
 
@@ -75,9 +78,11 @@ webApp = do
             maybeWord <- liftIO $ wordDetailView conn wordId
             maybe (S.status status404 >> S.text "not found") S.json maybeWord
         S.post "/word" $ do
-            body <- S.body
-            S.status
-                (maybe status400 (const status201) (wordCreateView conn body))
+            body           <- S.body
+            creationResult <- liftIO $ wordCreateView conn body
+            S.status $ case creationResult of
+                NotCreated -> status400
+                Created    -> status201
 
 
 develMain :: IO ()

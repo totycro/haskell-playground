@@ -27,6 +27,8 @@ import           Data.ByteString.UTF8          as BSU
 
 import           Debug.Trace
 
+-- TODO: look into linting tools (hlint?)
+
 main :: IO ()
 main = do
     conn <- dbConnection
@@ -56,6 +58,7 @@ matchMaybe = maybe False
 
 spec :: PG.Connection -> Spec
 spec conn = with webApp $ do
+
     describe "Retrieval" $ do
         it "get provides detail" $ do
             word     <- liftIO $ someWord conn
@@ -74,10 +77,22 @@ spec conn = with webApp $ do
             $                   get "/word/12345"
             `shouldRespondWith` 404
 
+
     describe "Creation" $ do
-        it "allows to add a new word"
+        it "return 201 on success"
             $                   post "/word" [json|{text: "newWord"}|]
             `shouldRespondWith` 201
+
+        it "actually creates objects" $ do
+            response <- post "/word" [json|{text: "newWord"}|]
+            liftIO
+                (              (PG.query_
+                                   conn
+                                   "SELECT count(*) FROM words where TEXT = 'newWord';" :: IO
+                                     [Only Integer]
+                               )
+                `shouldReturn` [Only 1]
+                )
 
         it "fails with bad request if text is not provided"
             $                   post "/word" [json|{}|]

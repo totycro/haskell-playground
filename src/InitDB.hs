@@ -30,6 +30,7 @@ initDb conn = test `catch` createStuff
 
 createTable :: Connection -> IO ()
 createTable conn =
+    -- TODO: distinct text
     void $ execute_ conn "CREATE TABLE words (id SERIAL, text TEXT NOT NULL);"
 
 deleteContent :: Connection -> IO ()
