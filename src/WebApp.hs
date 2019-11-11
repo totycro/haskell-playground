@@ -31,6 +31,37 @@ dbConnection = connect defaultConnectInfo { connectDatabase = "postgres"
                                           , connectPassword = "1234"
                                           }
 
+wordListView :: Connection -> S.ActionM ()
+wordListView conn = do
+    items <- liftIO
+        (query_ conn "SELECT id, text FROM words;" :: IO [Types.MyWord])
+    S.json items
+
+
+wordDetailView :: Connection -> S.ActionM ()
+wordDetailView conn = do
+    wordId <- S.param "id"
+    item   <-
+        liftIO
+        $ listToMaybe
+        <$> (query conn
+                   "SELECT id, text FROM words where id = ?;"
+                   [wordId :: Integer] :: IO [Types.MyWord]
+            )
+    maybe (S.status status404 >> S.text "not found") S.json item
+
+wordCreateView :: Connection -> S.ActionM ()
+wordCreateView conn = do
+    body <- S.body
+    case parseWordText body of
+        Just text -> do
+            liftIO $ () <$ execute conn
+                                   "INSERT INTO words(text) VALUES(?);"
+                                   [text]
+            S.status status201
+        Nothing -> S.status status400
+
+
 
 webApp :: IO Application
 webApp = do
@@ -43,33 +74,9 @@ webApp = do
                 trace (show e) (liftIO $ putStrLn "error handler reached")
                 S.text e
             )
-        S.get "/word" $ do
-            items <- liftIO
-                (query_ conn "SELECT id, text FROM words;" :: IO [Types.MyWord])
-            S.json items
-
-        S.get "/word/:id" $ do
-            wordId <- S.param "id"
-            item   <-
-                liftIO
-                $ listToMaybe
-                <$> (query conn
-                           "SELECT id, text FROM words where id = ?;"
-                           [wordId :: Integer] :: IO [Types.MyWord]
-                    )
-            maybe (S.status status404 >> S.text "not found") S.json item
-
-        S.post "/word" $ do
-            body <- S.body
-            case parseWordText body of
-                Just text -> do
-                    liftIO $ () <$ execute
-                        conn
-                        "INSERT INTO words(text) VALUES(?);"
-                        [text]
-                    S.status status201
-                Nothing -> S.status status400
-
+        S.get "/word" $ wordListView conn
+        S.get "/word/:id" $ wordDetailView conn
+        S.post "/word" $ wordCreateView conn
 
 parseWordText :: BSL.ByteString -> Maybe String
 parseWordText s = A.decode s >>= AT.parseMaybe (A..: "text")
