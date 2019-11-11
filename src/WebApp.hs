@@ -59,33 +59,56 @@ wordCreateView conn body = maybe (return NotCreated) createItem
         () <$ execute conn "INSERT INTO words(text) VALUES(?);" [wordText]
         return Created
 
+
+data DeletionResult = Deleted | NotFound
+deleteWord :: Connection -> Types.WordId -> IO DeletionResult
+deleteWord conn wordId = mapResult
+    <$> execute conn "DELETE FROM words WHERE id = ?;" [wordId]
+  where
+    mapResult 0 = NotFound
+    mapResult _ = Deleted
+
+
 webApp :: IO Application
 webApp = do
     conn <- dbConnection
     initDb conn
 
     S.scottyApp $ do
+
         S.defaultHandler
             (\e -> do
                 trace (show e) (liftIO $ putStrLn "error handler reached")
                 S.text e
             )
+
         S.get "/word" $ do
             wordList <- liftIO $ wordListView conn
             S.json wordList
+
         S.get "/word/:id" $ do
             wordId    <- Types.WordId <$> S.param "id"
             maybeWord <- liftIO $ wordDetailView conn wordId
             maybe (S.status status404 >> S.text "not found") S.json maybeWord
+
         S.post "/word" $ do
             body           <- S.body
             creationResult <- liftIO $ catchJust PGE.constraintViolation
                                                  (wordCreateView conn body)
                                                  handleUniqueViolation
             -- TODO: error message: unique violation or missing key
+            -- TODO: response content on 201 (will need to return sth in wordCreateView)
             S.status $ case creationResult of
                 NotCreated -> status400
                 Created    -> status201
+
+        S.delete "/word/:id" $ do
+            wordId <- Types.WordId <$> S.param "id"
+            result <- liftIO $ deleteWord conn wordId
+            S.status $
+                case result of
+                    Deleted  -> status204
+                    NotFound -> status404
 
 
         -- TODO: update

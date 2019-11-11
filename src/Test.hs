@@ -52,6 +52,11 @@ detailUrl word =
     BSU.fromString $ "/word/" ++ show (coerce $ pk word :: Integer)
 
 
+detailUrlDoesNotExist :: BSU.ByteString
+detailUrlDoesNotExist = "/word/1234541"
+
+
+
 matchMaybe :: (a -> Bool) -> Maybe a -> Bool
 matchMaybe = maybe False
 
@@ -60,6 +65,7 @@ spec :: PG.Connection -> Spec
 spec conn = with webApp $ do
 
     describe "Retrieval" $ do
+
         it "get provides detail" $ do
             word     <- liftIO $ someWord conn
             response <- get $ detailUrl word
@@ -74,11 +80,12 @@ spec conn = with webApp $ do
                 `shouldSatisfy` matchMaybe (\l -> Prelude.length l > 2)
 
         it "get results in 404 if word doesn't exist"
-            $                   get "/word/12345"
+            $                   get detailUrlDoesNotExist
             `shouldRespondWith` 404
 
 
     describe "Creation" $ do
+
         it "return 201 on success"
             $                   post "/word" [json|{text: "newWord"}|]
             `shouldRespondWith` 201
@@ -88,7 +95,7 @@ spec conn = with webApp $ do
             liftIO
                 (              (PG.query_
                                    conn
-                                   "SELECT count(*) FROM words where TEXT = 'newWord';" :: IO
+                                   "SELECT count(*) FROM words WHERE text = 'newWord';" :: IO
                                      [Only Integer]
                                )
                 `shouldReturn` [Only 1]
@@ -107,7 +114,24 @@ spec conn = with webApp $ do
             $                   post "/word" [json|{text: 24}|]
             `shouldRespondWith` 400
 
-    --describe "Deletion" $ do
-        --it "returns 204 on success"       undefined
-        -- it "actually deletes elements"    undefined
-        -- it "errors if item doesn't exist" undefined
+
+    describe "Deletion" $ do
+
+        it "returns 204 on success" $ do
+            word <- liftIO (someWord conn)
+            delete (detailUrl word) `shouldRespondWith` 204
+
+        it "actually deletes element" $ do
+            word <- liftIO (someWord conn)
+            delete (detailUrl word)
+            liftIO
+                ((PG.query conn
+                           "SELECT count(*) FROM words WHERE id = ?;"
+                           (pk word) :: IO [Only Integer]
+                 )
+                `shouldReturn` [Only 0]
+                )
+
+        it "errors if item doesn't exist"
+            $                   delete detailUrlDoesNotExist
+            `shouldRespondWith` 404  -- sometimes 204 is also used

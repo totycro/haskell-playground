@@ -12,7 +12,6 @@ import           Database.PostgreSQL.Simple.ToField
 import           Data.Aeson
 
 
-
 newtype WordId = WordId Integer deriving (Show, Generic, Eq)
 
 instance ToJSON WordId
@@ -21,6 +20,8 @@ instance FromField WordId where
     fromField f mdata = WordId <$> fromField f mdata
 instance ToField WordId where
     toField (WordId wId) = toField wId
+instance ToRow WordId where
+    toRow (WordId wId) = [toField wId]
 
 
 data MyWord = MyWord {
