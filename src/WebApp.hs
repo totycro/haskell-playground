@@ -46,18 +46,32 @@ wordDetailView conn wordId =
             )
 
 
+parseWordText :: BSL.ByteString -> Maybe String
+parseWordText s = A.decode s >>= AT.parseMaybe (A..: "text")
+
+
 data CreationResult = Created | NotCreated
 wordCreateView :: Connection -> BSL.ByteString -> IO CreationResult
 wordCreateView conn body = maybe (return NotCreated) createItem
     $ parseWordText body
   where
-    parseWordText :: BSL.ByteString -> Maybe String
-    parseWordText s = A.decode s >>= AT.parseMaybe (A..: "text")
-
     createItem :: String -> IO CreationResult
     createItem wordText = do
         () <$ execute conn "INSERT INTO words(text) VALUES(?);" [wordText]
         return Created
+
+
+data UpdateResult = Updated | UpdateNotFound | UpdateInvalidData
+updateWord :: Connection -> Types.WordId -> BSL.ByteString -> IO UpdateResult
+updateWord conn wordId body = case parseWordText body of
+    Nothing      -> return UpdateInvalidData
+    Just newText -> mapResult <$> execute
+        conn
+        "UPDATE words SET text = ? where id = ?;"
+        (newText, wordId)
+  where
+    mapResult 0 = UpdateNotFound
+    mapResult _ = Updated
 
 
 data DeletionResult = Deleted | NotFound
@@ -75,6 +89,7 @@ webApp = do
     initDb conn
 
     S.scottyApp $ do
+        -- TODO: use scotty resources
 
         S.defaultHandler
             (\e -> do
@@ -102,16 +117,24 @@ webApp = do
                 NotCreated -> status400
                 Created    -> status201
 
+        S.put "/word/:id" $ do
+            wordId <- Types.WordId <$> S.param "id"
+            body   <- S.body
+            result <- liftIO $ updateWord conn wordId body
+            S.status $ case result of
+                Updated           -> status200
+                UpdateNotFound    -> status404
+                UpdateInvalidData -> status400
+
+
         S.delete "/word/:id" $ do
             wordId <- Types.WordId <$> S.param "id"
             result <- liftIO $ deleteWord conn wordId
-            S.status $
-                case result of
-                    Deleted  -> status204
-                    NotFound -> status404
+            S.status $ case result of
+                Deleted  -> status204
+                NotFound -> status404
 
 
-        -- TODO: update
         -- TODO: business logic: advanced word properties like providing adjectives for words (tag cloud-like)
         --
 handleUniqueViolation :: PGE.ConstraintViolation -> IO CreationResult
