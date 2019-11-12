@@ -13,4 +13,4 @@
 
 /profile ProfileR GET
 
-/word WordR GET
+/word WordR GET POST
