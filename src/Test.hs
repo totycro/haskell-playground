@@ -28,7 +28,6 @@ import qualified Data.ByteString.Lazy.Char8    as BSLC
 
 import           Debug.Trace
 
--- TODO: look into linting tools (hlint?)
 
 main :: IO ()
 main = do
