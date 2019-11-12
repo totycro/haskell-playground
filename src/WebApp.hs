@@ -41,7 +41,7 @@ wordListView conn =
 wordDetailView :: Connection -> Types.WordId -> IO (Maybe Types.MyWord)
 wordDetailView conn wordId =
     M.listToMaybe
-        <$> (query conn "SELECT id, text FROM words where id = ?;" [wordId] :: IO
+        <$> (query conn "SELECT id, text FROM words where id = ?;" wordId :: IO
                   [Types.MyWord]
             )
 
@@ -76,8 +76,8 @@ updateWord conn wordId body = case parseWordText body of
 
 data DeletionResult = Deleted | NotFound
 deleteWord :: Connection -> Types.WordId -> IO DeletionResult
-deleteWord conn wordId = mapResult
-    <$> execute conn "DELETE FROM words WHERE id = ?;" [wordId]
+deleteWord conn wordId =
+    mapResult <$> execute conn "DELETE FROM words WHERE id = ?;" wordId
   where
     mapResult 0 = NotFound
     mapResult _ = Deleted

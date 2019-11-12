@@ -123,7 +123,7 @@ spec conn = with webApp $ do
             put (detailUrl word)
                 (BSLC.pack $ "{\"text\": \"" ++ newText ++ "\"}")
             liftIO
-                $ PG.query conn "SELECT text FROM words WHERE id = ?" [pk word]
+                $ PG.query conn "SELECT text FROM words WHERE id = ?" (pk word)
                 `shouldReturn` [PG.Only newText]
 
         it "returns 404 on unknown data"
