@@ -18,13 +18,13 @@ build-watch:
 	${RUN_IN_DOCKER} haskell stack build --file-watch -j4
 
 run:
-	${RUN_IN_DOCKER} --publish 8000:8000 haskell stack run
+	${RUN_IN_DOCKER} --publish 8000:8000 haskell stack run -j4
 
 run-watch:
 	${RUN_IN_DOCKER} --publish 8000:8000 haskell stack exec -- yesod devel
 
 tests:
-	${RUN_IN_DOCKER} haskell stack test
+	${RUN_IN_DOCKER} haskell stack test -j4 --fast
 
 tests-watch:
 	${RUN_IN_DOCKER} haskell stack test --file-watch --fast -j4

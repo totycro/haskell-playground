@@ -6,6 +6,9 @@ database:
   # something like:
   #
   #   database: "_env:PGDATABASE:yesod-crud_test"
-  database: yesod-crud_test
+  database: "postgres-test"
+  host: "_env:YESOD_PGHOST:db-test"
+  user: "_env:YESOD_PGUSER:postgres"
+  password: "_env:YESOD_PGPASS:asdf"
 
 auth-dummy-login: true
