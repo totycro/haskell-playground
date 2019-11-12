@@ -89,13 +89,18 @@ webApp = do
     initDb conn
 
     S.scottyApp $ do
-        -- TODO: use scotty resources
 
         S.defaultHandler
             (\e -> do
                 trace (show e) (liftIO $ putStrLn "error handler reached")
                 S.text e
             )
+
+        {- NOTE:
+            this should use scotty-resource to not define urls multiple times and to
+            provide 405 method not allowed on invalid methods, but that package isn't
+            really mantained and requires and old version of base.
+        -}
 
         S.get "/word" $ do
             wordList <- liftIO $ wordListView conn
