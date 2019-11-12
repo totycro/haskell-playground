@@ -13,6 +13,9 @@ import           Database.PostgreSQL.Simple     ( Connection
 import           Control.Exception              ( catch )
 import           Control.Monad                  ( void )
 
+
+-- TODO: use DB wrapper such as persistent
+
 initDb :: Connection -> IO ()
 initDb conn = test `catch` createStuff
   where
