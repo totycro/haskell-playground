@@ -17,6 +17,8 @@ import qualified Network.HTTP.Types            as HTTPT
 
 import qualified Yesod
 
+import qualified GHC.Exts                       ( fromList )
+
 
 
 matchMaybe :: (a -> Bool) -> Maybe a -> Bool
@@ -177,3 +179,29 @@ spec = withApp $ do
                         (WordDetailR wordId)
                         (encode $ object ["text" .= (3 :: Int)])
             statusIs 400
+
+
+    describe "Domains" $ do
+
+        it "shows words of domain" $ do
+            let domName = "test words"
+            domId <- runDB $ insert $ Domain domName Nothing
+            _     <- runDB $ insert $ MyWord "foo" domId
+            _     <- runDB $ insert $ MyWord "bar" domId
+
+            get DomainR
+
+            statusIs 200
+            decodedResponseShouldSatisfy
+                (== (Array $ GHC.Exts.fromList
+                        [ Object $ GHC.Exts.fromList
+                              [ ("name", String domName)
+                              , ( "words"
+                                , Array $ GHC.Exts.fromList
+                                    [String "foo", String "bar"]
+                                )
+                              ]
+                        ]
+                    )
+                )
+                -- TODO: more useful json literal, possibly more test data (other doms)

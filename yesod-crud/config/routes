@@ -15,3 +15,5 @@
 
 /word WordR GET POST
 /word/#MyWordId WordDetailR GET PUT DELETE
+
+/domain DomainR GET

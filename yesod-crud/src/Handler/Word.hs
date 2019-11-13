@@ -39,3 +39,16 @@ deleteWordDetailR :: MyWordId -> Handler ()
 deleteWordDetailR wId = do
     runDB $ delete wId
     sendStatusJSON status204 ()
+
+getDomainR :: Handler Value
+getDomainR = do
+    domains          <- runDB $ selectList [] []
+    domainsWithWords <- forM domains $ \dom -> do
+        -- TODO: more efficient implementation (like select_related?)
+        domWords <- runDB $ selectList [MyWordDomain ==. entityKey dom] []
+        return (entityVal dom, entityVal <$> domWords)
+    returnJson $ Array $ fromList $ serializeDomain <$> domainsWithWords
+
+serializeDomain :: (Domain, [MyWord]) -> Value
+serializeDomain (domain, domWords) =
+    object ["name" .= domainName domain, "words" .= (myWordText <$> domWords)]
