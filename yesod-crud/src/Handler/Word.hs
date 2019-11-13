@@ -31,10 +31,9 @@ getWordDetailR wordId = runDB $ get404 wordId >>= returnJson
 
 putWordDetailR :: MyWordId -> Handler ()
 putWordDetailR wordId = do
-    word <- requireCheckJsonBody :: Handler MyWord
-    runDB $ update404
-        wordId
-        [MyWordText =. myWordText word, MyWordDomain =. myWordDomain word]
+    _       <- runDB $ get404 wordId
+    newWord <- requireCheckJsonBody :: Handler MyWord
+    runDB $ replace wordId newWord
 
 deleteWordDetailR :: MyWordId -> Handler ()
 deleteWordDetailR wId = do
