@@ -52,9 +52,20 @@ postJson
 postJson = requestJson HTTPT.methodPost
 
 
+aDomain :: YesodExample App (Key Domain)
+aDomain = do
+    res <- runDB $ insertBy (Domain "animals" Nothing)
+    return $ either entityKey id res
+
+aWord :: YesodExample App (Key MyWord)
+aWord = do
+    domId <- aDomain
+    runDB $ insert $ MyWord "foo" domId
+
+
 deletedWordId :: SIO (YesodExampleData App) (Key MyWord)
 deletedWordId = do
-    wordId <- runDB $ insert $ MyWord ("a" :: Text)
+    wordId <- aWord
     runDB $ delete wordId
     return wordId
 
@@ -75,9 +86,9 @@ spec = withApp $ do
                 . parseMaybe (.: "data")
 
         it "returns list of elements" $ do
-            _ <- runDB $ do
-                _ <- insert $ MyWord "fst"
-                insert $ MyWord "snd"
+            domId <- aDomain
+            _     <- aWord
+            _     <- runDB $ insert $ MyWord "snd" domId
 
             get WordR
 
@@ -88,7 +99,7 @@ spec = withApp $ do
 
 
         it "returns word detail" $ do
-            wordId <- runDB $ insert $ MyWord wordText
+            wordId <- aWord
             get $ WordDetailR wordId
             statusIs 200
             decodedResponseShouldSatisfy $ matchMaybe (wordText ==) . parseMaybe
@@ -103,7 +114,10 @@ spec = withApp $ do
     describe "Creation" $ do
 
         it "allows creating new words" $ do
-            postJson WordR (encode (object ["text" .= wordText]))
+            domId <- aDomain
+            postJson
+                WordR
+                (encode (object ["text" .= wordText, "domain" .= domId]))
             statusIs 201
             matchingCount <- runDB $ count [MyWordText ==. wordText]
             liftIO $ matchingCount `shouldBe` 1
@@ -121,7 +135,7 @@ spec = withApp $ do
     describe "Deletion" $ do
 
         it "deletes existing elements" $ do
-            wordId <- runDB $ insert $ MyWord wordText
+            wordId <- aWord
             performMethod HTTPT.methodDelete $ WordDetailR wordId
             statusIs 204
             wordAfter <- runDB $ Database.Persist.get wordId
@@ -137,24 +151,28 @@ spec = withApp $ do
 
         it "updates an existing entry" $ do
             let newWordText = wordText <> " and so on"
-            wordId <- runDB $ insert $ MyWord wordText
-            requestJson HTTPT.methodPut
-                        (WordDetailR wordId)
-                        (encode $ object ["text" .= newWordText])
+            wordId <- aWord
+            domId  <- aDomain
+            requestJson
+                HTTPT.methodPut
+                (WordDetailR wordId)
+                (encode $ object ["text" .= newWordText, "domain" .= domId])
             statusIs 200
             newWord <- runDB $ Database.Persist.get wordId
             liftIO $ newWord `shouldSatisfy` matchMaybe
                 ((newWordText ==) . myWordText)
 
         it "returns 404 on non-existing entry" $ do
+            domId  <- aDomain
             wordId <- deletedWordId
-            requestJson HTTPT.methodPut
-                        (WordDetailR wordId)
-                        (encode $ object ["text" .= ("foo" :: Text)])
+            requestJson
+                HTTPT.methodPut
+                (WordDetailR wordId)
+                (encode $ object ["text" .= ("foo" :: Text), "domain" .= domId])
             statusIs 404
 
         it "refuses to update on invalid data" $ do
-            wordId <- runDB $ insert $ MyWord wordText
+            wordId <- aWord
             requestJson HTTPT.methodPut
                         (WordDetailR wordId)
                         (encode $ object ["text" .= (3 :: Int)])
