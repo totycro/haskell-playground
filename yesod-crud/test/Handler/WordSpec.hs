@@ -87,8 +87,8 @@ spec = withApp $ do
         it "allows creating new words" $ do
             postJson WordR (encode (object ["text" .= wordText]))
             statusIs 201
-            matchingWords <- runDB $ selectList [MyWordText ==. wordText] []
-            liftIO $ matchingWords `shouldHaveLength` 1
+            matchingCount <- runDB $ count [MyWordText ==. wordText]
+            liftIO $ matchingCount `shouldBe` 1
 
         it "refuses to create duplicates" $ do
             postJson WordR (encode (object ["text" .= wordText]))
@@ -98,7 +98,6 @@ spec = withApp $ do
         it "returns bad request if data malformed" $ do
             postJson WordR (encode (object ["text" .= (123 :: Int)]))
             statusIs 400
-
 
 
 
