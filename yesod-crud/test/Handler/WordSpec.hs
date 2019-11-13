@@ -12,6 +12,7 @@ import           Data.Aeson
 import           Data.Aeson.Types
 import qualified Data.ByteString.Lazy          as BSL
 import qualified Network.Wai.Test              as WAIT
+import qualified Database.Persist
 
 import qualified Yesod
 
@@ -27,11 +28,6 @@ decodedResponseShouldSatisfy check = withResponse $ \response ->
     liftIO
         $               (decode . WAIT.simpleBody) response
         `shouldSatisfy` matchMaybe check
-
-
-shouldHaveLength :: Show a => [a] -> Int -> Expectation
-shouldHaveLength l i = l `shouldSatisfy` (\li -> length li == i)
-
 
 postJson
     :: (Yesod.Yesod site, Yesod.RedirectUrl site url)
@@ -98,6 +94,21 @@ spec = withApp $ do
         it "returns bad request if data malformed" $ do
             postJson WordR (encode (object ["text" .= (123 :: Int)]))
             statusIs 400
+
+    describe "Deletion" $ do
+        it "deletes existing elements" $ do
+            wordId <- runDB $ insert $ MyWord wordText
+            performMethod "DELETE" $ WordDetailR wordId
+            statusIs 204
+            wordAfter <- runDB $ Database.Persist.get wordId
+            liftIO $ wordAfter `shouldBe` Nothing
+
+        it "returns 204 if element does not exist" $ do
+            wordId <- runDB $ insert $ MyWord wordText
+            runDB $ delete wordId
+            performMethod "DELETE" $ WordDetailR wordId
+            statusIs 204  -- sometimes also 404 is used
+
 
 
 

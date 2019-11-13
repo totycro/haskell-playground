@@ -26,5 +26,7 @@ getWordDetailR wordId = runDB $ get404 wordId >>= returnJson
 putWordDetailR :: MyWordId -> Handler Value
 putWordDetailR = undefined
 
-deleteWordDetailR :: MyWordId -> Handler Value
-deleteWordDetailR = undefined
+deleteWordDetailR :: MyWordId -> Handler ()
+deleteWordDetailR wId = do
+    runDB $ delete wId
+    sendStatusJSON status204 ()
