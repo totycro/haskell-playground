@@ -14,3 +14,4 @@
 /profile ProfileR GET
 
 /word WordR GET POST
+/word/#MyWordId WordDetailR GET PUT DELETE

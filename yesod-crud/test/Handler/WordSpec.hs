@@ -1,5 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Handler.WordSpec
     ( spec
     )
@@ -19,20 +20,18 @@ import qualified Yesod
 matchMaybe :: (a -> Bool) -> Maybe a -> Bool
 matchMaybe = maybe False
 
--- TODO: possibly not have these in global scope if not necessary
-parseDataList :: Object -> Maybe [MyWord]
-parseDataList = parseMaybe (\obj -> obj .: "data" >>= return)
 
-decodeResponse :: WAIT.SResponse -> Maybe Object
-decodeResponse r = (decode (WAIT.simpleBody r) :: Maybe Object)
-
-responseShouldSatisfy :: MonadIO m => (Object -> Bool) -> WAIT.SResponse -> m ()
-responseShouldSatisfy f r =
-    liftIO $ decodeResponse r `shouldSatisfy` (matchMaybe f)
+decodedResponseShouldSatisfy
+    :: (Show a, FromJSON a) => (a -> Bool) -> YesodExample site ()
+decodedResponseShouldSatisfy check = withResponse $ \response ->
+    liftIO
+        $               (decode . WAIT.simpleBody) response
+        `shouldSatisfy` matchMaybe check
 
 
 shouldHaveLength :: Show a => [a] -> Int -> Expectation
 shouldHaveLength l i = l `shouldSatisfy` (\li -> length li == i)
+
 
 postJson
     :: (Yesod.Yesod site, Yesod.RedirectUrl site url)
@@ -47,14 +46,16 @@ postJson url body = request $ do
 
 spec :: Spec
 spec = withApp $ do
+    let wordText = "foo" :: Text
     describe "Retrieval" $ do
         it "returns empty list on no content" $ do
             -- (this test is mostly useless)
             get WordR
+
             statusIs 200
-            -- list should be empty
-            withResponse
-                $ responseShouldSatisfy (matchMaybe null . parseDataList)
+            decodedResponseShouldSatisfy
+                $ matchMaybe (null :: [MyWord] -> Bool)
+                . parseMaybe (.: "data")
 
         it "returns list of elements" $ do
             _ <- runDB $ do
@@ -62,20 +63,34 @@ spec = withApp $ do
                 insert $ MyWord "snd"
 
             get WordR
+
             statusIs 200
-            withResponse $ responseShouldSatisfy
-                (matchMaybe (\l -> length l == 2) . parseDataList)
+            decodedResponseShouldSatisfy
+                $ matchMaybe (\(l :: [MyWord]) -> length l == 2)
+                . parseMaybe (.: "data")
+
+
+        it "returns word detail" $ do
+            wordId <- runDB $ insert $ MyWord wordText
+            get $ WordDetailR wordId
+            statusIs 200
+            decodedResponseShouldSatisfy $ matchMaybe (wordText ==) . parseMaybe
+                (.: "text")
+
+        it "returns 404 on unknown id" $ do
+            wordId <- runDB $ insert $ MyWord wordText
+            runDB $ delete wordId
+            get $ WordDetailR wordId
+            statusIs 404
 
     describe "Creation" $ do
         it "allows creating new words" $ do
-            let wordText = "foo" :: Text
             postJson WordR (encode (object ["text" .= wordText]))
             statusIs 201
-            matchingWords <- (runDB $selectList [MyWordText ==. wordText] [])
-            liftIO $ (matchingWords `shouldHaveLength` 1)
+            matchingWords <- runDB $ selectList [MyWordText ==. wordText] []
+            liftIO $ matchingWords `shouldHaveLength` 1
 
         it "refuses to create duplicates" $ do
-            let wordText = "foo" :: Text
             postJson WordR (encode (object ["text" .= wordText]))
             postJson WordR (encode (object ["text" .= wordText]))
             statusIs 400
@@ -83,6 +98,7 @@ spec = withApp $ do
         it "returns bad request if data malformed" $ do
             postJson WordR (encode (object ["text" .= (123 :: Int)]))
             statusIs 400
+
 
 
 
