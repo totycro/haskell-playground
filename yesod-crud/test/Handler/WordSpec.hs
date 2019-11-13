@@ -13,6 +13,7 @@ import           Data.Aeson.Types
 import qualified Data.ByteString.Lazy          as BSL
 import qualified Network.Wai.Test              as WAIT
 import qualified Database.Persist
+import qualified Network.HTTP.Types            as HTTPT
 
 import qualified Yesod
 
@@ -29,20 +30,40 @@ decodedResponseShouldSatisfy check = withResponse $ \response ->
         $               (decode . WAIT.simpleBody) response
         `shouldSatisfy` matchMaybe check
 
+
+requestJson
+    :: (Yesod.Yesod site, Yesod.RedirectUrl site url)
+    => HTTPT.Method
+    -> url
+    -> BSL.ByteString
+    -> YesodExample site ()
+requestJson method url body = request $ do
+    setMethod method
+    setUrl url
+    setRequestBody body
+    addRequestHeader ("Content-Type", "application/json")
+
+
 postJson
     :: (Yesod.Yesod site, Yesod.RedirectUrl site url)
     => url
     -> BSL.ByteString
     -> YesodExample site ()
-postJson url body = request $ do
-    setMethod "POST"
-    setUrl url
-    setRequestBody body
-    addRequestHeader ("Content-Type", "application/json")
+postJson = requestJson HTTPT.methodPost
+
+
+deletedWordId :: SIO (YesodExampleData App) (Key MyWord)
+deletedWordId = do
+    wordId <- runDB $ insert $ MyWord ("a" :: Text)
+    runDB $ delete wordId
+    return wordId
+
 
 spec :: Spec
 spec = withApp $ do
+
     let wordText = "foo" :: Text
+
     describe "Retrieval" $ do
         it "returns empty list on no content" $ do
             -- (this test is mostly useless)
@@ -74,12 +95,13 @@ spec = withApp $ do
                 (.: "text")
 
         it "returns 404 on unknown id" $ do
-            wordId <- runDB $ insert $ MyWord wordText
-            runDB $ delete wordId
+            wordId <- deletedWordId
             get $ WordDetailR wordId
             statusIs 404
 
+
     describe "Creation" $ do
+
         it "allows creating new words" $ do
             postJson WordR (encode (object ["text" .= wordText]))
             statusIs 201
@@ -95,22 +117,45 @@ spec = withApp $ do
             postJson WordR (encode (object ["text" .= (123 :: Int)]))
             statusIs 400
 
+
     describe "Deletion" $ do
+
         it "deletes existing elements" $ do
             wordId <- runDB $ insert $ MyWord wordText
-            performMethod "DELETE" $ WordDetailR wordId
+            performMethod HTTPT.methodDelete $ WordDetailR wordId
             statusIs 204
             wordAfter <- runDB $ Database.Persist.get wordId
             liftIO $ wordAfter `shouldBe` Nothing
 
         it "returns 204 if element does not exist" $ do
-            wordId <- runDB $ insert $ MyWord wordText
-            runDB $ delete wordId
-            performMethod "DELETE" $ WordDetailR wordId
+            wordId <- deletedWordId
+            performMethod HTTPT.methodDelete $ WordDetailR wordId
             statusIs 204  -- sometimes also 404 is used
 
 
+    describe "Update" $ do
 
+        it "updates an existing entry" $ do
+            let newWordText = wordText <> " and so on"
+            wordId <- runDB $ insert $ MyWord wordText
+            requestJson HTTPT.methodPut
+                        (WordDetailR wordId)
+                        (encode $ object ["text" .= newWordText])
+            statusIs 200
+            newWord <- runDB $ Database.Persist.get wordId
+            liftIO $ newWord `shouldSatisfy` matchMaybe
+                ((newWordText ==) . myWordText)
 
--- TODO: write tests
--- TODO: basically port tests from scotty
+        it "returns 404 on non-existing entry" $ do
+            wordId <- deletedWordId
+            requestJson HTTPT.methodPut
+                        (WordDetailR wordId)
+                        (encode $ object ["text" .= ("foo" :: Text)])
+            statusIs 404
+
+        it "refuses to update on invalid data" $ do
+            wordId <- runDB $ insert $ MyWord wordText
+            requestJson HTTPT.methodPut
+                        (WordDetailR wordId)
+                        (encode $ object ["text" .= (3 :: Int)])
+            statusIs 400
