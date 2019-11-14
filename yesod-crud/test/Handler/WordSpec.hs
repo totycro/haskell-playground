@@ -59,6 +59,12 @@ aDomain = do
     res <- runDB $ insertBy (Domain "animals" Nothing)
     return $ either entityKey id res
 
+aPopulatedDomain :: YesodExample App (Key Domain)
+aPopulatedDomain = runDB $ do
+    domain <- insert $ Domain "populated domain" Nothing
+    _      <- insert $ MyWord "word of populated domain" (domain)
+    return domain
+
 aWord :: YesodExample App (Key MyWord)
 aWord = do
     domId <- aDomain
@@ -205,3 +211,18 @@ spec = withApp $ do
                     )
                 )
                 -- TODO: more useful json literal, possibly more test data (other doms)
+
+
+    describe "Empty Domains" $ do
+
+        it "shows only empty domains" $ do
+            let domName = "empty domain"
+            emptyDomId <- aDomain
+            _          <- aPopulatedDomain
+            emptyDom   <- runDB $ Database.Persist.get emptyDomId
+
+            get EmptyDomainR
+
+            statusIs 200
+            -- TODO: only check on names, don't check full output format
+            decodedResponseShouldSatisfy (== [emptyDom])

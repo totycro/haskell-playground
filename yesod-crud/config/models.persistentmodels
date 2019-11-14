@@ -21,6 +21,9 @@ Domain json
     name Text
     description Text Maybe
     UniqueDomainName name
+    deriving Eq
+    deriving Show
+
 MyWord json
     text Text
     domain DomainId

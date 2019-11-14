@@ -9,6 +9,7 @@ module Handler.Word where
 
 import           Import
 import qualified Data.Map                      as Map
+import qualified Database.Esqueleto            as E
 
 
 -- TODO: call another service, possibly using servant server/client or hreq request library (possibly consider serv)
@@ -59,6 +60,19 @@ getDomainR = do
             | dom <- domains
             ]
     returnJson $ Array $ fromList $ serializeDomain <$> domainsWithWords
+
+getEmptyDomainR :: Handler Value
+getEmptyDomainR = do
+    emptyDomains <-
+        -- TODO: use exists instead of count() == 0
+        runDB $ E.select $ E.from $ \(domain `E.LeftOuterJoin` my_word) -> do
+            E.on (domain E.^. DomainId E.==. my_word E.^. MyWordDomain)
+            E.groupBy (domain E.^. DomainId)
+            let wordCount = E.count (my_word E.^. MyWordId)
+            E.having $ wordCount E.==. E.val (0 :: Int)
+            E.orderBy [E.asc (domain E.^. DomainName)]
+            return domain
+    returnJson $ entityVal <$> emptyDomains
 
 serializeDomain :: (Domain, [MyWord]) -> Value
 serializeDomain (domain, domWords) =
