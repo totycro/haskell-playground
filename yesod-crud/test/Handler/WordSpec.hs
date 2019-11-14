@@ -62,7 +62,7 @@ aDomain = do
 aPopulatedDomain :: YesodExample App (Key Domain)
 aPopulatedDomain = runDB $ do
     domain <- insert $ Domain "populated domain" Nothing
-    _      <- insert $ MyWord "word of populated domain" (domain)
+    _      <- insert $ MyWord "word of populated domain" domain
     return domain
 
 aWord :: YesodExample App (Key MyWord)
