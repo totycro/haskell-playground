@@ -199,16 +199,14 @@ spec = withApp $ do
 
             statusIs 200
             decodedResponseShouldSatisfy
-                (== (Array $ GHC.Exts.fromList
-                        [ Object $ GHC.Exts.fromList
-                              [ ("name", String domName)
-                              , ( "words"
-                                , Array $ GHC.Exts.fromList
-                                    [String "foo", String "bar"]
-                                )
-                              ]
-                        ]
-                    )
+                (== [ Object $ GHC.Exts.fromList
+                          [ ("name", String domName)
+                          , ( "words"
+                            , Array
+                                $ GHC.Exts.fromList [String "foo", String "bar"]
+                            )
+                          ]
+                    ]
                 )
                 -- TODO: more useful json literal, possibly more test data (other doms)
 
