@@ -8,6 +8,10 @@
 module Handler.Word where
 
 import           Import
+import qualified Data.Map                      as Map
+
+
+-- TODO: call another service, possibly using servant server/client or hreq request library (possibly consider serv)
 
 
 update404 wordId d = do
@@ -40,13 +44,20 @@ deleteWordDetailR wId = do
     runDB $ delete wId
     sendStatusJSON status204 ()
 
+-- | Lists domains together with their words
 getDomainR :: Handler Value
 getDomainR = do
-    domains          <- runDB $ selectList [] []
-    domainsWithWords <- forM domains $ \dom -> do
-        -- TODO: more efficient implementation (like select_related?)
-        domWords <- runDB $ selectList [MyWordDomain ==. entityKey dom] []
-        return (entityVal dom, entityVal <$> domWords)
+    domains  <- runDB $ selectList [] [Asc DomainName]
+    allWords <- runDB $ selectList [] [Asc MyWordText]
+    let wordsMap :: Map (Key Domain) [MyWord] = Map.fromListWith
+            (++)
+            [ (myWordDomain $ entityVal word, [entityVal word])
+            | word <- allWords
+            ]
+    let domainsWithWords :: [(Domain, [MyWord])] =
+            [ (entityVal dom, findWithDefault [] (entityKey dom) wordsMap)
+            | dom <- domains
+            ]
     returnJson $ Array $ fromList $ serializeDomain <$> domainsWithWords
 
 serializeDomain :: (Domain, [MyWord]) -> Value
