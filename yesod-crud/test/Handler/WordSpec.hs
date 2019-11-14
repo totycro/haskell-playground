@@ -214,13 +214,13 @@ spec = withApp $ do
     describe "Empty Domains" $ do
 
         it "shows only empty domains" $ do
-            let domName = "empty domain"
-            emptyDomId <- aDomain
-            _          <- aPopulatedDomain
-            emptyDom   <- runDB $ Database.Persist.get emptyDomId
+            let emptyDomName = "empty domain" :: Text
+            _ <- runDB $ insert $ Domain emptyDomName Nothing
+            _ <- aPopulatedDomain
 
             get EmptyDomainR
 
             statusIs 200
-            -- TODO: only check on names, don't check full output format
-            decodedResponseShouldSatisfy (== [emptyDom])
+            -- TODO: try lenses!
+            decodedResponseShouldSatisfy $ \domains ->
+                (parseMaybe (.: "name") <$> domains) == [Just emptyDomName]
