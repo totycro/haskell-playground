@@ -8,10 +8,16 @@ module Handler.WordSpec
 where
 
 import           TestImport
-
+import           Control.Lens                   ( (^..) )
 import           Data.Aeson
 import           Data.Aeson.QQ                  ( aesonQQ )
-import           Data.Aeson.Types
+import           Data.Aeson.Types               ( parseMaybe
+                                                , FromJSON
+                                                )
+import           Data.Aeson.Lens                ( values
+                                                , key
+                                                , _String
+                                                )
 import qualified Data.ByteString.Lazy          as BSL
 import qualified Network.Wai.Test              as WAIT
 import qualified Database.Persist
@@ -217,6 +223,11 @@ spec = withApp $ do
             get EmptyDomainR
 
             statusIs 200
-            -- TODO: try lenses!
-            decodedResponseShouldSatisfy $ \domains ->
-                (parseMaybe (.: "name") <$> domains) == [Just emptyDomName]
+
+            withResponse $ \response ->
+                liftIO
+                    $          WAIT.simpleBody response
+                    ^..        values
+                    .          key "name"
+                    .          _String
+                    `shouldBe` [emptyDomName]

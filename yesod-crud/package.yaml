@@ -45,6 +45,7 @@ dependencies:
 - http-types
 - esqueleto
 - aeson-qq
+- lens
 - lens-aeson
 - hspec >=2.0.0
 - yesod-test
