@@ -1,6 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE QuasiQuotes #-}
 module Handler.WordSpec
     ( spec
     )
@@ -9,6 +10,7 @@ where
 import           TestImport
 
 import           Data.Aeson
+import           Data.Aeson.QQ                  ( aesonQQ )
 import           Data.Aeson.Types
 import qualified Data.ByteString.Lazy          as BSL
 import qualified Network.Wai.Test              as WAIT
@@ -16,8 +18,6 @@ import qualified Database.Persist
 import qualified Network.HTTP.Types            as HTTPT
 
 import qualified Yesod
-
-import qualified GHC.Exts                       ( fromList )
 
 
 
@@ -191,24 +191,20 @@ spec = withApp $ do
 
         it "shows words of domain" $ do
             let domName = "test words"
+            let word1   = "foo"
+            let word2   = "bar"
             domId <- runDB $ insert $ Domain domName Nothing
-            _     <- runDB $ insert $ MyWord "foo" domId
-            _     <- runDB $ insert $ MyWord "bar" domId
+            _     <- runDB $ insert $ MyWord word1 domId
+            _     <- runDB $ insert $ MyWord word2 domId
 
             get DomainR
 
             statusIs 200
             decodedResponseShouldSatisfy
-                (== [ Object $ GHC.Exts.fromList
-                          [ ("name", String domName)
-                          , ( "words"
-                            , Array
-                                $ GHC.Exts.fromList [String "foo", String "bar"]
-                            )
-                          ]
-                    ]
+                (== [aesonQQ| [
+                        { name: #{domName}, words: [ #{word1}, #{word2} ] }
+                    ] |]
                 )
-                -- TODO: more useful json literal, possibly more test data (other doms)
 
 
     describe "Empty Domains" $ do
