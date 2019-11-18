@@ -45,6 +45,9 @@ dependencies:
 - http-types
 - esqueleto
 - aeson-qq
+- lens-aeson
+- hspec >=2.0.0
+- yesod-test
 
 # The library contains all of our application code. The executable
 # defined below is just a thin wrapper.
@@ -83,12 +86,12 @@ executables:
 tests:
   yesod-crud-test:
     main: Spec.hs
-    source-dirs: test
+    source-dirs:
+    - test
+    - src
     ghc-options: -Wall
     dependencies:
     - yesod-crud
-    - hspec >=2.0.0
-    - yesod-test
 
 # Define flags used by "yesod devel" to make compilation faster
 flags:
