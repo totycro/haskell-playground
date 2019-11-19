@@ -7,9 +7,13 @@ module Categorer
     )
 where
 
-import           Control.Lens
+import           Control.Lens                   ( (^..) )
 
-import           Options.Generic
+import           Options.Generic                ( getRecord
+                                                , ParseRecord
+                                                , type (<?>)
+                                                , unHelpful
+                                                )
 import           Data.Aeson.Lens                ( _String
                                                 , key
                                                 , values
