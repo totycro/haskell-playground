@@ -1,0 +1,90 @@
+cabal-version:       2.0
+name:                categorer
+version:             0.0.0
+synopsis:            See README for more info
+description:         See README for more info
+homepage:            https://github.com/totycro/categorer
+bug-reports:         https://github.com/totycro/categorer/issues
+license:             GPL-3
+license-file:        LICENSE
+author:              Bernhard Mallinger
+maintainer:          b.mallinger@gmx.at
+copyright:           2019 Bernhard Mallinger
+build-type:          Simple
+extra-doc-files:     README.md
+                   , CHANGELOG.md
+tested-with:         GHC == 8.6.5
+
+source-repository head
+  type:                git
+  location:            https://github.com/totycro/categorer.git
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Categorer
+                       Prelude
+
+  build-depends:       base-noprelude ^>= 4.12.0.0
+                     , classy-prelude
+                     , optparse-generic
+
+  ghc-options:         -Wall
+                       -Wincomplete-uni-patterns
+                       -Wincomplete-record-updates
+                       -Wcompat
+                       -Widentities
+                       -Wredundant-constraints
+                       -fhide-source-paths
+                       -Wmissing-export-lists
+                       -Wpartial-fields
+
+  default-language:    Haskell2010
+  default-extensions: OverloadedStrings
+
+executable categorer
+  hs-source-dirs:      app
+  main-is:             Main.hs
+
+  build-depends:       base-noprelude ^>= 4.12.0.0
+                     , categorer
+                     , classy-prelude
+
+  ghc-options:         -Wall
+                       -threaded
+                       -rtsopts
+                       -with-rtsopts=-N
+                       -Wincomplete-uni-patterns
+                       -Wincomplete-record-updates
+                       -Wcompat
+                       -Widentities
+                       -Wredundant-constraints
+                       -fhide-source-paths
+                       -Wmissing-export-lists
+                       -Wpartial-fields
+
+  default-language:    Haskell2010
+
+test-suite categorer-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+
+  build-depends:       base-noprelude ^>= 4.12.0.0
+                     , categorer
+                     , classy-prelude
+
+  ghc-options:         -Wall
+                       -threaded
+                       -rtsopts
+                       -with-rtsopts=-N
+                       -Wincomplete-uni-patterns
+                       -Wincomplete-record-updates
+                       -Wcompat
+                       -Widentities
+                       -Wredundant-constraints
+                       -fhide-source-paths
+                       -Wmissing-export-lists
+                       -Wpartial-fields
+
+  default-language:    Haskell2010
+  default-extensions: OverloadedStrings
