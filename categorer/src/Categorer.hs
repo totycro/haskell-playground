@@ -45,7 +45,8 @@ appMain :: IO ()
 appMain = do
     wco <- getRecord "Categorer"
     let leWord = unHelpful $ word (wco :: WordCategoryOptions)
+    -- TODO: timing information about how long the request took
     categories <- retrieveCategories leWord
 
     putStrLn $ "Categories of " <> leWord <> ":"
-    mapM_ putStrLn categories
+    putStr $ unlines categories
