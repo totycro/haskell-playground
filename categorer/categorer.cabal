@@ -24,6 +24,9 @@ library
   build-depends:       base-noprelude ^>= 4.12.0.0
                      , classy-prelude
                      , optparse-generic
+                     , wreq
+                     , lens
+                     , lens-aeson
 
   ghc-options:         -Wall
                        -Wincomplete-uni-patterns
