@@ -4,10 +4,13 @@
 
 module Categorer
     ( appMain
+    , MonadHttp(..)
+    , retrieveCategories
     )
 where
 
 import           Control.Lens                   ( (^..) )
+import qualified Data.ByteString.Lazy          as BL
 
 import           Options.Generic                ( getRecord
                                                 , ParseRecord
@@ -33,9 +36,15 @@ constructUrl leWord =
         <> leWord
         <> "&prop=categories&format=json"
 
-retrieveCategories :: Text -> IO [Text]
+class Monad m => MonadHttp m where
+    get :: Text -> m (WREQ.Response BL.ByteString)
+
+instance MonadHttp IO where
+    get = WREQ.get . unpack
+
+retrieveCategories :: MonadHttp m => Text -> m [Text]
 retrieveCategories leWord = do
-    response <- WREQ.get $ unpack $ constructUrl leWord
+    response <- get (constructUrl leWord)
     return
         $   response
         ^.. WREQ.responseBody
