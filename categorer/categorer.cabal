@@ -3,8 +3,6 @@ name:                categorer
 version:             0.0.0
 synopsis:            See README for more info
 description:         See README for more info
-homepage:            https://github.com/totycro/categorer
-bug-reports:         https://github.com/totycro/categorer/issues
 license:             GPL-3
 license-file:        LICENSE
 author:              Bernhard Mallinger
@@ -17,7 +15,6 @@ tested-with:         GHC == 8.6.5
 
 source-repository head
   type:                git
-  location:            https://github.com/totycro/categorer.git
 
 library
   hs-source-dirs:      src
