@@ -18,7 +18,7 @@ import qualified Network.HTTP.Client.Internal  as HCI
 import qualified Network.HTTP.Types            as HT
 import           Test.Hspec
 
-import           Categorer                      ( MonadHttp(..)
+import           RetrieveCategories             ( MonadHttp(..)
                                                 , retrieveCategories
                                                 )
 import           Control.Monad.Trans.Class

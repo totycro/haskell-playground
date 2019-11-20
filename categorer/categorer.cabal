@@ -36,6 +36,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Categorer
                        Prelude
+                       RetrieveCategories
 
   ghc-options:         -Wall
                        -Wincomplete-uni-patterns
