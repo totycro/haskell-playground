@@ -30,6 +30,8 @@ common deps
                    , hspec
                    , transformers
                    , mtl
+                   , servant-server
+                   , warp
 
 library
   import: deps
@@ -37,6 +39,7 @@ library
   exposed-modules:     Categorer
                        Prelude
                        RetrieveCategories
+                       CategorerServer
 
   ghc-options:         -Wall
                        -Wincomplete-uni-patterns
@@ -51,10 +54,33 @@ library
   default-language:    Haskell2010
   default-extensions: OverloadedStrings
 
+executable categorerServer
+  import:           deps
+  hs-source-dirs:   app
+  main-is:          MainServer.hs
+
+  build-depends:    categorer
+
+  ghc-options:         -Wall
+                       -threaded
+                       -rtsopts
+                       -with-rtsopts=-N
+                       -Wincomplete-uni-patterns
+                       -Wincomplete-record-updates
+                       -Wcompat
+                       -Widentities
+                       -Wredundant-constraints
+                       -fhide-source-paths
+                       -Wmissing-export-lists
+                       -Wpartial-fields
+
+  default-language:    Haskell2010
+
+
 executable categorer
   import: deps
   hs-source-dirs:      app
-  main-is:             Main.hs
+  main-is:             MainCLI.hs
 
   build-depends:      categorer
 
@@ -80,6 +106,8 @@ test-suite categorer-test
   main-is:             Spec.hs
 
   build-depends:       categorer
+  other-modules:       RetrieveCategoriesSpec
+                       CategorerServerSpec
 
   ghc-options:         -Wall
                        -threaded

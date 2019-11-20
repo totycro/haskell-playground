@@ -8,7 +8,7 @@ import           Test.Hspec                     ( Spec
                                                 , describe
                                                 , shouldBe
                                                 )
-import CategorerServer (CategorerAPI)
+import           CategorerServer                ( CategorerAPI )
 
 spec :: Spec
 spec = describe "CategorerServer" $ it "should do" $ 1 `shouldBe` 2
