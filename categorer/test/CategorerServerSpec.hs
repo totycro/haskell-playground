@@ -33,15 +33,24 @@ import           Servant.Client                 ( client
 import           CategorerServer                ( CategorerAPI
                                                 , app
                                                 )
+import           RetrieveCategories             ( RetrieveCategories )
 
 testAppPort :: Int
 testAppPort = 8888
 
+mockCategories :: [Text]
+mockCategories = ["a", "b", "and c"]
+
+mockRetrieveCategories :: RetrieveCategories
+mockRetrieveCategories _ = return mockCategories
+
 withApp :: IO () -> IO ()
-withApp action =
   -- we can spin up a server in another thread and kill that thread when done
   -- in an exception-safe way
-    bracket (liftIO $ forkIO $ run testAppPort app) killThread (const action)
+withApp action = bracket
+    (liftIO $ forkIO $ run testAppPort $ app mockRetrieveCategories)
+    killThread
+    (const action)
 
 errorsWithStatus :: Status -> Either ClientError a -> Bool
 errorsWithStatus status (Left (FailureResponse _ response)) =
@@ -60,7 +69,7 @@ spec = around_ withApp $ do
 
         it "provides categories for word" $ do
             result <- runClientM (categoryAPI $ Just "foo") clientEnv
-            result `shouldBe` Right ["foo", "bar"]
+            result `shouldBe` Right mockCategories
 
         it "error if no word given" $ do
             result <- runClientM (categoryAPI Nothing) clientEnv
