@@ -109,6 +109,7 @@ test-suite categorer-test
   build-depends:       categorer
   other-modules:       RetrieveCategoriesSpec
                        CategorerServerSpec
+                       TestUtils
 
   ghc-options:         -Wall
                        -threaded

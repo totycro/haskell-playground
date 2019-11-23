@@ -1,8 +1,6 @@
-{-# LANGUAGE RankNTypes #-}
 module RetrieveCategories
-    ( MonadHttp(..)
-    , retrieveCategories
-    , RetrieveCategories
+    ( retrieveCategories
+    , Retrieve
     )
 where
 
@@ -21,17 +19,11 @@ constructUrl leWord =
         <> leWord
         <> "&prop=categories&format=json"
 
-class Monad m => MonadHttp m where
-    get :: Text -> m (WREQ.Response BL.ByteString)
+type Retrieve = Text -> IO (WREQ.Response BL.ByteString)
 
-instance MonadHttp IO where
-    get = WREQ.get . unpack
-
-type RetrieveCategories = (forall  m . MonadHttp m => Text -> m [Text])
-
-retrieveCategories :: RetrieveCategories
-retrieveCategories leWord = do
-    response <- get (constructUrl leWord)
+retrieveCategories :: Retrieve -> Text -> IO [Text]
+retrieveCategories r leWord = do
+    response <- r (constructUrl leWord)
     return
         $   response
         ^.. WREQ.responseBody

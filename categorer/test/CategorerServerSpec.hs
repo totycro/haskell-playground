@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 module CategorerServerSpec
     ( spec
     )
@@ -22,6 +23,8 @@ import           Network.HTTP.Types             ( Status(..)
 import           Network.HTTP.Client            ( newManager
                                                 , defaultManagerSettings
                                                 )
+import           Data.List                      ( (!!) )
+import           Data.Aeson.QQ                  ( aesonQQ )
 import           Servant                        ( Proxy(..) )
 import           Servant.Client                 ( client
                                                 , parseBaseUrl
@@ -33,7 +36,8 @@ import           Servant.Client                 ( client
 import           CategorerServer                ( CategorerAPI
                                                 , app
                                                 )
-import           RetrieveCategories             ( RetrieveCategories )
+import           RetrieveCategories             ( Retrieve )
+import           TestUtils                      ( mockResponse )
 
 testAppPort :: Int
 testAppPort = 8888
@@ -41,8 +45,14 @@ testAppPort = 8888
 mockCategories :: [Text]
 mockCategories = ["a", "b", "and c"]
 
-mockRetrieveCategories :: RetrieveCategories
-mockRetrieveCategories _ = return mockCategories
+mockRetrieveCategories :: Retrieve
+mockRetrieveCategories _ = return $ mockResponse [aesonQQ|
+    {"parse": {"categories": [
+        {"*": #{mockCategories !! 0}},
+        {"*": #{mockCategories !! 1}},
+        {"*": #{mockCategories !! 2}}
+    ]}}|]
+
 
 withApp :: IO () -> IO ()
   -- we can spin up a server in another thread and kill that thread when done

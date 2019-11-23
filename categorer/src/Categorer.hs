@@ -14,6 +14,7 @@ import           Options.Generic                ( getRecord
                                                 , type (<?>)
                                                 , unHelpful
                                                 )
+import qualified Network.Wreq                  as WREQ
 data WordCategoryOptions = WCO
     { word :: Text <?> "Search for categories of this word"
     }
@@ -26,7 +27,7 @@ appMain = do
     wco <- getRecord "Categorer"
     let leWord = unHelpful $ word (wco :: WordCategoryOptions)
     -- TODO: timing information about how long the request took
-    categories <- retrieveCategories leWord
+    categories <- retrieveCategories (WREQ.get . unpack) leWord
 
     putStrLn $ "Categories of " <> leWord <> ":"
     putStr $ unlines categories
