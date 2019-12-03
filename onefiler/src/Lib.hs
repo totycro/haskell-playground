@@ -1,6 +1,10 @@
 module Lib
     ( someFunc
-    ) where
+    )
+where
+
+import           ClassyPrelude
+
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"

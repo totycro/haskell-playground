@@ -8,7 +8,6 @@ copyright:           "2019 Author name here"
 
 
 default-extensions:
-  - NoImplicitPrelude
   - OverloadedStrings
 
 
@@ -29,6 +28,9 @@ description:         Please see the README on GitHub at <https://github.com/gith
 dependencies:
 - base-noprelude
 - classy-prelude
+- lens
+- text
+- mtl
 
 library:
   source-dirs: src

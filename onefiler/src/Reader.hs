@@ -9,8 +9,6 @@ import           Control.Monad.IO.Class         ( MonadIO
                                                 , liftIO
                                                 )
 
---import           Control.Monad.Reader           ( MyReader , ask , runReader)
-
 
 newtype MyReader r a = MR { myRunReader :: r -> a }
 
@@ -31,11 +29,11 @@ instance Monad (MyReader r) where
     readerA >>= funX =
         MR $ \input -> myRunReader (funX (myRunReader readerA input)) input
 
-ask :: MyReader a a
-ask = MR id
+myAsk :: MyReader a a
+myAsk = MR id
 
-asks :: (e -> a) -> MyReader e a
-asks = MR
+myAsks :: (e -> a) -> MyReader e a
+myAsks = MR
 
 
 foo :: MyReader c (IO c)
@@ -62,19 +60,19 @@ miInc2 = fmap (+ 1)
 
 
 fun :: MyReader Int (MyInt Int)
-fun = ask >>= \a -> return (MI $ a + 1)
+fun = myAsk >>= \a -> return (MI $ a + 1)
 
 x :: Int -> MyOtherInt
 x = undefined
 
 fun2 :: MyReader Int MyOtherInt
 fun2 = do
-    a <- asks (x)
+    a <- myAsks (x)
     return a
 
 fun3 :: MyReader Int MyOtherInt
 fun3 = do
-    a <- ask
+    a <- myAsk
     return $ MOI a
 
 fen :: MyReader Int (MyInt Int)
@@ -91,50 +89,29 @@ fan = do
     return $ a
 
 
-
---ask :: MyReader r a => a r ask = kkk
-
 {-
-class Monad m => MyReader r m | m -> r where
-    myAsk :: m r
-    myAsk = _
-
--- Imagine this is a directory
-type Config = FilePath
-
-load :: (MyReader Config m, MonadIO m) => String -> m String
-load x = do
-    config <- myAsk
-    liftIO $ readFile (config ++ x)
-
-loadRevision :: (MyReader Config m, MonadIO m) => Int -> m String
-loadRevision x = load ("history" ++ show x ++ ".txt")
-
-loadAll :: (MyReader Config m, MonadIO m) => Int -> String -> m (String, String)
-loadAll x y = do
-    a <- load y
-    b <- loadRevision x
-    return (a, b)
+myReader :: Reader Int Text
+--myReader = myAsk >>= \x -> pure $ tshow x
+myReader = reader tshow
 -}
 
-
-myReader :: Reader Int Text
---myReader = ask >>= \x -> pure $ tshow x
-myReader = reader tshow
-
+{-
 myReader2 :: Reader Int Text
 myReader2 = do
-    x <- asks (+ 1)
+    x <- myAsks (+ 1)
     pure $ runReader myReader x
+-}
 
-myReader3 :: Reader Int Text
-myReader3 = (<> " yeah") <$> myReader2
+-- myReader3 :: Reader Int Text
+-- myReader3 = (<> " yeah") <$> myReader2
 
-myReader4 :: Reader Int Text
-myReader4 = local (* 10) myReader
+-- myReader4 :: Reader Int Text
+-- myReader4 = local (* 10) myReader
 
+{-
 myReader5 :: Reader Int Bool
 myReader5 = reader (> (0 :: Int))
+-}
 
 mySeqA :: (Applicative f) => [f a] -> f [a]
 mySeqA []       = pure []

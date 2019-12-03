@@ -22,7 +22,7 @@ instance (Monad m) => Applicative (MyMT m) where
 
 
 opx :: (Applicative m) => m (Maybe (a -> b)) -> m (Maybe a -> Maybe b)
-opx = ((<*>) <$>)hab             i
+opx = ((<*>) <$>)
 
 op :: Applicative m => MyMT m (a -> b) -> MyMT m a -> MyMT m b
 --op (MT fab) (MT mma) = MT $ ((<*>) <$> fab) <*> mma
