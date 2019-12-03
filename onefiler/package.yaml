@@ -6,6 +6,7 @@ author:              "Author name here"
 maintainer:          "example@example.com"
 copyright:           "2019 Author name here"
 
+ghc-options: -Wall
 
 default-extensions:
   - OverloadedStrings
@@ -30,6 +31,8 @@ dependencies:
 - lens
 - text
 - mtl
+- directory
+- containers
 
 library:
   source-dirs: src
