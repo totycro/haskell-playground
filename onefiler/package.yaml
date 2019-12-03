@@ -9,8 +9,7 @@ copyright:           "2019 Author name here"
 
 default-extensions:
   - OverloadedStrings
-
-
+  - ScopedTypeVariables
 
 extra-source-files:
 - README.md
