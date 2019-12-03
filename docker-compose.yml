@@ -3,7 +3,8 @@ services:
   haskell:
     build: .
     volumes:
-    - .:/mnt
+    - .:/mnt/work
+    - ${HOME}/.stack:/mnt/home/.stack
     ports:
     - 8000
 
