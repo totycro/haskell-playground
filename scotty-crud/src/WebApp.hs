@@ -30,7 +30,7 @@ import           Network.Wai                    ( Application )
 dbConnection :: IO Connection
 dbConnection = connect defaultConnectInfo { connectDatabase = "postgres"
                                           , connectHost     = "db"
-                                          , connectPassword = "1234"
+                                          , connectPassword = "asdf"
                                           }
 
 wordListView :: Connection -> IO [Types.MyWord]

@@ -15,6 +15,8 @@ FROM fpco/stack-build:lts-14.13
 
 # (official haskel docker images don't provide a Dockerfile and it's git links don't work)
 
-ENV HOME /mnt/docker-home
+RUN mkdir -p /mnt/work /mnt/home/.stack
 
-WORKDIR /mnt
+ENV HOME /mnt/home
+
+WORKDIR /mnt/work

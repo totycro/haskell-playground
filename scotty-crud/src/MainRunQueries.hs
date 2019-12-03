@@ -19,7 +19,7 @@ main :: IO ()
 main = do
     conn <- connect defaultConnectInfo { connectDatabase = "postgres"
                                        , connectHost     = "db"
-                                       , connectPassword = "1234"
+                                       , connectPassword = "asdf"
                                        }
     putStrLn "here"
     initDb conn
