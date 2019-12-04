@@ -4,13 +4,13 @@ where
 
 import           System.Directory
 
-possiblePaths :: IO [Text]
+possiblePaths :: IO [FilePath]
 possiblePaths = do
     home <- getHomeDirectory
     pure
         [ "/etc/myconf.conf"
-        , pack home <> "/.myconf.conf"
-        , pack home <> "/.config/myconf.conf"
+        , home <> "/.myconf.conf"
+        , home <> "/.config/myconf.conf"
         ]
 
 newtype Config = Config (Maybe Int) deriving (Show)
@@ -38,11 +38,8 @@ getActualConfig2 = do
     possiblePaths' <- possiblePaths
     mconcat <$> sequence (parseConfig <$> possiblePaths')
   where
-    parseConfig :: Text -> IO Config
-    parseConfig path =
-        Config
-            .   readMay
-            <$> (ignoreError (traceShowId <$> (readFileUtf8 $ show path)))
+    parseConfig :: FilePath -> IO Config
+    parseConfig path = Config . readMay <$> ignoreError (readFileUtf8 path)
 
     ignoreError :: Monoid a => IO a -> IO a
     ignoreError io = io `catch` (\(_ :: IOError) -> pure mempty)
