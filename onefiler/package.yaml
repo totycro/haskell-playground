@@ -33,6 +33,7 @@ dependencies:
 - mtl
 - directory
 - containers
+- bytestring
 
 library:
   source-dirs: src
