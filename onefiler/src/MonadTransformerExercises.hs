@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MonadTransformerExercises
     ( a
+    , aTime
+    , runIO
     )
 where
 
@@ -12,6 +14,13 @@ import           Prelude                 hiding ( log )
 import           Control.Monad.Trans.Maybe
 import           Control.Monad.Trans.Writer
 
+import           Data.Time.Clock.POSIX          ( getPOSIXTime
+                                                , POSIXTime
+                                                )
+
+
+import           Control.Concurrent             ( threadDelay )
+
 
 
 -- ========================================
@@ -22,7 +31,7 @@ data ProtectedData a = ProtectedData String a
 
 
 accessData :: String -> ProtectedData a -> Maybe a
-accessData s (ProtectedData pass v) = if s == pass then Just v else Nothing
+accessData s (ProtectedData pw v) = if s == pw then Just v else Nothing
 
 
 type Protected s a = MaybeT (Reader (ProtectedData s)) a
@@ -108,3 +117,38 @@ runLogging = runWriter
 
 a :: (Int, Log)
 a = runLogging logger
+
+
+data ItemTime = MsgTime POSIXTime String | SectionTime String [ItemTime] deriving (Show,Eq)
+type LogTime = [ItemTime]
+type LoggingTime a = WriterT LogTime IO a
+
+logTime :: Show t => t -> LoggingTime ()
+logTime el = do
+    time <- lift getPOSIXTime
+    tell [MsgTime time (show el)]
+
+withSectionTime :: String -> LoggingTime a -> LoggingTime a
+withSectionTime sectionName sectionLogging = pass $ do
+    leData <- sectionLogging
+    return (leData, \items -> [SectionTime sectionName items])
+
+runLoggingTime :: LoggingTime a -> IO (a, LogTime)
+runLoggingTime = runWriterT
+
+adder :: LoggingTime (Int -> Int)
+adder = return (+ 1)
+
+loggerTime :: LoggingTime Int
+loggerTime = do
+    logTime "now"
+    lift $ threadDelay $ 3 * 10 ^ 5
+    logTime "now2"
+    lift $ threadDelay $ 3 * 10 ^ 5
+    f <- adder
+    lift $ threadDelay $ 3 * 10 ^ 5
+    logTime "then"
+    return $ f 2
+
+aTime :: IO (Int, LogTime)
+aTime = runLoggingTime loggerTime

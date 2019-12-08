@@ -37,6 +37,7 @@ dependencies:
 - bytestring
 - free
 - transformers
+- time
 
 library:
   source-dirs: src
