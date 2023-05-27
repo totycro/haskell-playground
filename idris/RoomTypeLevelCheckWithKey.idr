@@ -15,6 +15,12 @@ data Room : tk -> DoorState -> ty -> Type where
   RoomClosed : Key tk -> ty -> Room tk Closed ty
   RoomLocked : Key tk -> ty -> Room tk Locked ty
 
+-- just for fun
+Functor (Room tk ds) where
+  map func (RoomOpen k x) =  RoomOpen k (func x)
+  map func (RoomClosed k x) = RoomClosed k (func x)
+  map func (RoomLocked k x) = RoomLocked k (func x)
+
 rOpen : Room Nat Open (List Int)
 rOpen = RoomOpen (MkKey 3) [1, 2]
 
