@@ -1,10 +1,12 @@
 import Door
 
 data Key : Type -> Type where
-   MkKey : ty -> Key ty
+   MkKey : Eq ty => ty -> Key ty
 
-Eq ty => Eq (Key ty) where
-  (==) (MkKey k1) (MkKey k2) = k1 == k2
+Eq (Key ty) where
+  (==) (MkKey @{useThisEq} k1) (MkKey k2) = (==) @{useThisEq} k1 k2
+  -- need to tell idris which Eq instance to use because both
+  -- k1 and k2 have one https://stackoverflow.com/a/73488001/4658170
 
 -- own types for every state
 -- Key type, DoorState and type of contents are in type
@@ -19,7 +21,7 @@ rOpen = RoomOpen (MkKey 3) [1, 2]
 rLocked : Room String Locked (List Int)
 rLocked = RoomLocked (MkKey "foobar") [5, 8]
 
-unlockRoom : Eq tk => Key tk -> Room tk Locked ty -> Maybe (Room tk Closed ty)
+unlockRoom : Key tk -> Room tk Locked ty -> Maybe (Room tk Closed ty)
 unlockRoom givenKey (RoomLocked roomKey x) = case (givenKey == roomKey) of
                                                   True => Just $ RoomClosed roomKey x
                                                   False => Nothing
