@@ -8,7 +8,7 @@ data Key : Type -> Type where
    MkKey : ty -> Key  ty
 
 -- own types for every state
--- DoorState and type of contents are in type
+-- Key type, DoorState and type of contents are in type
 data Room : tk ->  DoorState -> ty -> Type where
   RoomOpen : Key tk -> ty -> Room tk Open ty
   RoomClosed : Key tk -> ty -> Room tk Closed ty
