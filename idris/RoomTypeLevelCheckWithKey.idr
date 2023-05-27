@@ -15,16 +15,11 @@ data Room : tk -> DoorState -> ty -> Type where
   RoomClosed : Key tk -> ty -> Room tk Closed ty
   RoomLocked : Key tk -> ty -> Room tk Locked ty
 
--- just for fun
-Functor (Room tk ds) where
-  map func (RoomOpen k x) =  RoomOpen k (func x)
-  map func (RoomClosed k x) = RoomClosed k (func x)
-  map func (RoomLocked k x) = RoomLocked k (func x)
 
-rOpen : Room Nat Open (List Int)
-rOpen = RoomOpen (MkKey 3) [1, 2]
+rOpen : Room String Open (List Integer)
+rOpen = RoomOpen (MkKey "abc") [1, 2]
 
-rLocked : Room String Locked (List Int)
+rLocked : Room String Locked (List Integer)
 rLocked = RoomLocked (MkKey "foobar") [5, 8]
 
 unlockRoom : Key tk -> Room tk Locked ty -> Maybe (Room tk Closed ty)
@@ -43,3 +38,30 @@ testUnlockLockedIncorrect = unlockRoom (MkKey "wrong") rLocked
 
 -- actually unlock
 testUnlockLockedCorrect = unlockRoom (MkKey "foobar") rLocked
+
+
+-- just for fun
+Functor (Room tk ds) where
+  map func (RoomOpen k x) =  RoomOpen k (func x)
+  map func (RoomClosed k x) = RoomClosed k (func x)
+  map func (RoomLocked k x) = RoomLocked k (func x)
+
+Applicative (Room String Open) where
+  pure x = RoomOpen (MkKey "") x
+  RoomOpen (MkKey @{useThisEq} key1) func <*> RoomOpen (MkKey key2) x = RoomOpen (MkKey @{useThisEq} (key1 ++ key2)) (func x)
+
+Monad (Room String Open) where
+  (RoomOpen key x) >>= func = func x
+  join (RoomOpen (MkKey @{useThisEq} key1) (RoomOpen (MkKey key2) x)) = RoomOpen (MkKey @{useThisEq} (key1 ++ key2)) x
+
+
+makeRoom : String -> x -> Room String Open x
+makeRoom keyContent = RoomOpen (MkKey keyContent)
+
+roomInRoom = makeRoom "outer" $ makeRoom "inner" [3]
+
+combineThingsFromRooms = do
+  x <- rOpen
+  y <- join roomInRoom
+  z <- (makeRoom "" (map (+1))) <*> pure [3]
+  makeRoom "newRoomKey" $ x ++ y ++ z
