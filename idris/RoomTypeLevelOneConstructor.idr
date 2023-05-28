@@ -28,7 +28,7 @@ unlockRoom givenKey room = case keyFits givenKey room of
                                 False => Nothing
                            where
                               doUnlock : Room tk Locked ty2 -> Room tk Closed ty2
-                              doUnlock (MkRoom roomKey Locked x) = (MkRoom roomKey Closed x)
+                              doUnlock (MkRoom roomKey _ x) = (MkRoom roomKey _ x)
 
 
 
@@ -49,4 +49,19 @@ describeLockState : Room tk ds ty -> String
 describeLockState (MkRoom key Open contents) = "It's open"
 describeLockState (MkRoom key Closed contents) = "It's closed, but not locked"
 describeLockState (MkRoom key Locked contents) = "Locked, gonna need a key"
+
+
+data CanEnter : DoorState -> Type where
+     CanEnterOpen : CanEnter Open
+     CanEnterClosed : CanEnter Closed
+
+getStuffFromRoom : {auto _ : CanEnter ds} -> (Room tk ds ty) -> ty
+getStuffFromRoom (MkRoom key ds x) = x
+
+testGetStuffOpen : List Integer
+testGetStuffOpen = getStuffFromRoom rOpen
+
+-- this does not type check as desired
+-- testGetStuffLocked : List Integer
+-- testGetStuffLocked = getStuffFromRoom rLocked
 
